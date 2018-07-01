@@ -1,0 +1,29 @@
+{
+  "name": "marcos-bot",
+  "version": "1.0.0",
+  "description": "A Telegram bot that generates random messages based in patterns of previous conversations",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Holis, mensaje de prueba\""
+  },
+  "author": "Franco Frizzo",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "typescript": "^2.9.2"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "http://www.github.com/francofrizzo/marcos-bot-js.git"
+  },
+  "keywords": [
+    "random",
+    "messages",
+    "bot",
+    "telegram",
+    "markov",
+    "chains",
+    "chat"
+  ]
+}
