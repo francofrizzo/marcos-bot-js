@@ -28,6 +28,13 @@ class Word implements EqComparable<Word>, Serializable<Word> {
     }
 
     /**
+     * Returns a pretty printable version of the word
+     */
+    print(): string {
+        return this.string;
+    }
+
+    /**
      * Determines whether two words are the same or not.
      * @param other The other word to compare.
      */
@@ -60,8 +67,9 @@ class Word implements EqComparable<Word>, Serializable<Word> {
  */
 class InitialWord extends Word {
     constructor() { super(undefined); }
-    isInitial() { return true; }
-    equals(other: Word) { return other.isInitial(); }
+    isInitial(): boolean { return true; }
+    print(): string { return "<start>"; }
+    equals(other: Word): boolean { return other.isInitial(); }
     serialize(): string { return "INIT" };
 }
 
@@ -70,8 +78,9 @@ class InitialWord extends Word {
  */
 class TerminalWord extends Word {
     constructor() { super(undefined); }
-    isTerminal() { return true; }
-    equals(other: Word) { return other.isTerminal(); }
+    isTerminal(): boolean { return true; }
+    print(): string { return "<end>"; }
+    equals(other: Word): boolean { return other.isTerminal(); }
     serialize(): string { return "TERM" };
 }
 
@@ -185,7 +194,7 @@ class Phraser {
      */
     transitionsFrom(chainId: number, word: string): [string, number][] {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return chain.transitionsFrom(new Word(word)).map(p => [p[0].string, p[1]] as [string, number]);
+        return chain.transitionsFrom(new Word(word)).map(p => [p[0].print(), p[1]] as [string, number]);
     }
 
     /**
@@ -196,6 +205,6 @@ class Phraser {
      */
     transitionsTo(chainId: number, word: string): [string, number][] {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return chain.transitionsTo(new Word(word)).map(p => [p[0].string, p[1]] as [string, number]);
+        return chain.transitionsTo(new Word(word)).map(p => [p[0].print(), p[1]] as [string, number]);
     }
 }

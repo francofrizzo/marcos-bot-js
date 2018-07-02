@@ -96,20 +96,20 @@ class MarcosBotApplication {
                 }
             },
             {
-                command: "transitionsFrom",
+                command: "transitionsFrom", // TODO: Handle empty chains
                 argRegExp: "(\\S+)$",
                 handler: (message, argMatch) => {
                     const transitions = this.phraser.transitionsFrom(message.chat.id, argMatch[1])
-                    const response = transitions.map(t => t[0] + ": " + t[1]).join(" ");
+                    const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
                     this.answer(message, response);
                 }
             },
             {
-                command: "transitionsTo",
+                command: "transitionsTo", // TODO: Handle empty chains
                 argRegExp: "(\\S+)$",
                 handler: (message, argMatch) => {
                     const transitions = this.phraser.transitionsTo(message.chat.id, argMatch[1])
-                    const response = transitions.map(t => t[0] + ": " + t[1]).join(" ");
+                    const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
                     this.answer(message, response);
                 }
             },
