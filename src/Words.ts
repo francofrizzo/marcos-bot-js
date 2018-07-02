@@ -141,22 +141,26 @@ class Phraser {
         addWordsAfter: boolean
     ): string {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        let words = phrase.split(" ")[0];
+        let words = phrase.split(" ");
         let extendedPhrase = phrase;
         if (words.length > 0) {
-            if (addWordsBefore) {
+            if (addWordsBefore
+                && chain.transitionsTo(new Word(words[0])).length > 0
+            ) {
                 extendedPhrase = Phraser.wordsToString(chain.getRandomWalk(
                     new Word(words[0]),
-                    word => word.isTerminal(),
+                    word => word.isInitial(),
                     "backwards"
-                )) + extendedPhrase;
+                ).slice(1).reverse()) + " " + extendedPhrase;
             }
-            if (addWordsAfter) {
-                extendedPhrase = extendedPhrase
+            if (addWordsAfter
+                && chain.transitionsFrom(new Word(words[words.length - 1])).length > 0
+            ) {
+                extendedPhrase = extendedPhrase + " " 
                 + Phraser.wordsToString(chain.getRandomWalk(
                     new Word(words[words.length - 1]),
                     word => word.isTerminal(),
-                ));
+                ).slice(1));
             }
         }
         return extendedPhrase;
