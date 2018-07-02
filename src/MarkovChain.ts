@@ -196,7 +196,12 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
      */
     getRandomNextNode(): MarkovChainNode<T> {
         let transitions = this.getTransitionsFromHere();
+        if (!transitions.isEmpty()) {
         return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
+    }
+        else {
+            throw Error("There are no transitions going out of this state");
+        }
     }
 
     /**
@@ -205,7 +210,12 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
      */
     getRandomPreviousNode(): MarkovChainNode<T> {
         let transitions = this.getTransitionsToHere();
+        if (!transitions.isEmpty()) {
         return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
+    }
+        else {
+            throw Error("There are no transitions arriving to this state");
+        }
     }
 
     /**

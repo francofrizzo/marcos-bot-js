@@ -101,14 +101,19 @@ class FrequencySet<T extends EqComparable<T>> {
      */
     private getRandomWrapper(): FrequencySetElementWrapper<T> {
         // This algorithm should be thoroughly tested.
-        let dice: number = Math.random() * this.totalAppearences;
-        let currentPosition: number = 0;
-        let appearencesCount: number = 0;
-        while (appearencesCount <= dice) {
-            appearencesCount += this.elementWrappers[currentPosition].frequency;
-            currentPosition += 1;
+        if (!this.isEmpty()) {
+            let dice: number = Math.random() * this.totalAppearences;
+            let currentPosition: number = 0;
+            let appearencesCount: number = 0;
+            while (appearencesCount <= dice) {
+                appearencesCount += this.elementWrappers[currentPosition].frequency;
+                currentPosition += 1;
+            }
+            return this.elementWrappers[currentPosition - 1];
         }
-        return this.elementWrappers[currentPosition - 1];
+        else {
+            throw Error("The set is empty");
+        }
     }
 
     /**
@@ -161,6 +166,10 @@ class FrequencySet<T extends EqComparable<T>> {
      */
     getAllElements(): T[] {
         return this.elementWrappers.map(wrapper => wrapper.element);
+    }
+
+    isEmpty(): boolean {
+        return this.totalAppearences == 0;
     }
 }
 
