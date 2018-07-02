@@ -52,7 +52,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * @param fromState The initial state of the transition to add.
      * @param toState The final state of the transition to add.
      */
-    addTransition(fromState: T, toState: T) {
+    addTransition(fromState: T, toState: T): void {
         this.withNodeDo(fromState, node => node.addTransitionTo(toState));
     }
 
@@ -60,7 +60,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * Recieves an array of states of the chain and adds a transition
      * between each pair of consecutive elements of the array,
      */
-    addTransitions(states: T[]) {
+    addTransitions(states: T[]): void {
         for (let index = 1; index < states.length; index++) {
             this.addTransition(states[index - 1], states[index]);
         }
@@ -108,7 +108,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
         startingState: T,
         stoppingCriteria: (state: T, index?: number) => boolean,
         direction: "forwards" | "backwards" = "forwards"
-    ) {
+    ): T[] {
         let startingNode = this.generateNode(startingState);
         let advancingFunction = direction == "forwards"
             ? node => node.getRandomNextNode()
@@ -197,8 +197,8 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
     getRandomNextNode(): MarkovChainNode<T> {
         let transitions = this.getTransitionsFromHere();
         if (!transitions.isEmpty()) {
-        return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
-    }
+            return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
+        }
         else {
             throw Error("There are no transitions going out of this state");
         }
@@ -211,8 +211,8 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
     getRandomPreviousNode(): MarkovChainNode<T> {
         let transitions = this.getTransitionsToHere();
         if (!transitions.isEmpty()) {
-        return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
-    }
+            return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
+        }
         else {
             throw Error("There are no transitions arriving to this state");
         }

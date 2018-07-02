@@ -180,7 +180,7 @@ class Phraser {
      * @param chainId The Markov chain to feed.
      * @param phrase The phrase to add to the Markov chain.
      */
-    storePhrase(chainId: number, phrase: string) {
+    storePhrase(chainId: number, phrase: string): void {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
         let words = Phraser.stringToWords(phrase);
         chain.addTransitions(words);
