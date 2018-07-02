@@ -1,7 +1,13 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es2015",
         "module": "commonjs",
-        "sourceMap": true
-    }
+        "moduleResolution": "node",
+        "rootDir": "src",
+        "sourceMap": true,
+        "outDir": "dist",
+    },
+    "include": [
+        "src/**/*"
+    ]
 }
