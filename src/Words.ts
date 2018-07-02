@@ -94,16 +94,34 @@ class Phraser {
     }
 
     /**
+     * Converts an array of Words objects into a string.
+     */
+    private static wordsToString(words: Word[]): string {
+        return words.filter(word => !word.isInitial() && !word.isTerminal())
+            .map(word => word.string).join(' ');
+    }
+
+    /**
+     * Converts a string into an array of Words objects.
+     */
+    private static stringToWords(phrase: string): Word[] {
+        return [new InitialWord()].concat(
+            phrase.split(/\s+/).map(string => new Word(string)),
+            [new TerminalWord()]
+        );
+    }
+
+    /**
      * Generates a random phrase using the Markov chain whose identifier
      * is passed as a parameter.
      * @param chainId The identifier of the Markov chain to be used.
      */
     generatePhrase(chainId: number): string {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return chain.getRandomWalk(
+        return Phraser.wordsToString(chain.getRandomWalk(
             new InitialWord(),
             word => word.isTerminal()
-        ).join(" ");
+        ));
     }
 
     /**
@@ -124,23 +142,24 @@ class Phraser {
     ): string {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
         let words = phrase.split(" ")[0];
-        let extendePhrase = phrase;
+        let extendedPhrase = phrase;
         if (words.length > 0) {
             if (addWordsBefore) {
-                extendePhrase = chain.getRandomWalk(
+                extendedPhrase = Phraser.wordsToString(chain.getRandomWalk(
                     new Word(words[0]),
                     word => word.isTerminal(),
                     "backwards"
-                ).join(" ") + extendePhrase;
+                )) + extendedPhrase;
             }
             if (addWordsAfter) {
-                extendePhrase = extendePhrase + chain.getRandomWalk(
+                extendedPhrase = extendedPhrase
+                + Phraser.wordsToString(chain.getRandomWalk(
                     new Word(words[words.length - 1]),
                     word => word.isTerminal(),
-                ).join(" ");
+                ));
             }
         }
-        return extendePhrase;
+        return extendedPhrase;
     }
 
     /**
@@ -150,10 +169,7 @@ class Phraser {
      */
     storePhrase(chainId: number, phrase: string) {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        let words = [new InitialWord()].concat(
-            phrase.split(/\s+/).map(string => new Word(string)),
-            [new TerminalWord()]
-        );
+        let words = Phraser.stringToWords(phrase);
         chain.addTransitions(words);
     }
 
