@@ -2,3 +2,4 @@ node_modules
 dist
 *.code-workspace
 local
+scripts

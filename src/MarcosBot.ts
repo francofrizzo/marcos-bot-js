@@ -32,6 +32,7 @@ type MarcosBotActionHandler = (message?: TelegramBot.Message, argMatch?: string[
 class MarcosBotApplication {
     private config: MarcosBotConfiguration;
     private bot: TelegramBot;
+    private botName: string;
     private actions: MarcosBotAction[] = [];
     private phraser: Phraser;
 
@@ -40,9 +41,9 @@ class MarcosBotApplication {
         this.setup();
     }
 
-    private setup(): void {
+    private async setup(): Promise<void> {
         this.setupPhraser();
-        this.createBot();
+        await this.createBot();
         this.setupActions();
         this.setupListeners();
     }
@@ -51,8 +52,9 @@ class MarcosBotApplication {
         this.phraser = new Phraser(this.getChainProperties());
     }
 
-    private createBot(): void {
+    private async createBot(): Promise<void> {
         this.bot = new TelegramBot(this.config.token, { polling: true });
+        this.botName = (await this.bot.getMe() as TelegramBot.User).username;
     }
 
     private setupActions(): void {
@@ -141,8 +143,8 @@ class MarcosBotApplication {
 
     private handleTextMessage(message: TelegramBot.Message) {
         const messageText = message.text;
-        const commandMatch = /^\/(\S+)/.exec(messageText);
-        if (commandMatch) {
+        const commandMatch = /^\/([^\s@]+)@(\S+)?/.exec(messageText);
+        if (commandMatch && (!commandMatch[2] || commandMatch[2] == this.botName)) {
             const command = commandMatch[1];
             const action = this.getAction(command);
             if (action) {

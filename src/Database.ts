@@ -16,6 +16,8 @@ var createSchema = async function() {
     )`)
 };
 
+createSchema();
+
 interface Serializable<T> {
     serialize(): string;
     deserialize(serialized: string): T; // Language shortcoming: this should
