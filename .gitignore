@@ -1,4 +1,4 @@
 node_modules
 dist
-markov.js
-markov.js.map
+*.code-workspace
+local

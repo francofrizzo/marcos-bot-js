@@ -1,5 +1,5 @@
 import { FrequencySet, EqComparable } from "./FrequencySet"
-import { DatabaseQuerier, Serializable } from "./DatabaseQuerier"
+import { DatabaseQuerier, Serializable } from "./Database"
 export { MarkovChain, MarkovChainProperties }
 
 // TODO: Add mutations to generation
@@ -52,7 +52,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * @param fromState The initial state of the transition to add.
      * @param toState The final state of the transition to add.
      */
-    addTransition(fromState: T, toState: T): void {
+    async addTransition(fromState: T, toState: T): Promise<void> {
         this.withNodeDo(fromState, node => node.addTransitionTo(toState));
     }
 
@@ -60,7 +60,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * Recieves an array of states of the chain and adds a transition
      * between each pair of consecutive elements of the array,
      */
-    addTransitions(states: T[]): void {
+    async addTransitions(states: T[]): Promise<void> {
         for (let index = 1; index < states.length; index++) {
             this.addTransition(states[index - 1], states[index]);
         }
@@ -77,17 +77,17 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * @param advancingFunction A function that determines how to obtain the
      * next node to visit.
      */
-    private getRandomWalkNodes(
+    private async getRandomWalkNodes(
         startingNode: MarkovChainNode<T>,
         stoppingCriteria: (node: MarkovChainNode<T>, index?: number) => boolean,
-        advancingFunction: (node: MarkovChainNode<T>) => MarkovChainNode<T>
-    ): MarkovChainNode<T>[] {
+        advancingFunction: (node: MarkovChainNode<T>) => Promise<MarkovChainNode<T>>
+    ): Promise<MarkovChainNode<T>[]> {
         let walk: MarkovChainNode<T>[] = [];
         let currentNode = startingNode;
         let index = 0;
         walk.push(currentNode);
         while (!stoppingCriteria(currentNode, index)) {
-            currentNode = advancingFunction(currentNode);
+            currentNode = await advancingFunction(currentNode);
             index++;
             walk.push(currentNode);
         }
@@ -104,16 +104,16 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * @param direction The direction in which to walk; it can be 'forwards'
      * or 'backwards'.
      */
-    getRandomWalk(
+    async getRandomWalk(
         startingState: T,
         stoppingCriteria: (state: T, index?: number) => boolean,
         direction: "forwards" | "backwards" = "forwards"
-    ): T[] {
+    ): Promise<T[]> {
         let startingNode = this.generateNode(startingState);
         let advancingFunction = direction == "forwards"
-            ? node => node.getRandomNextNode()
-            : node => node.getRandomPreviousNode()
-        let walkNodes = this.getRandomWalkNodes(
+            ? (node: MarkovChainNode<T>) => node.getRandomNextNode()
+            : (node: MarkovChainNode<T>) => node.getRandomPreviousNode()
+        let walkNodes = await this.getRandomWalkNodes(
             startingNode,
             (node, index) => stoppingCriteria(node.content, index),
             advancingFunction
@@ -126,8 +126,8 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * possible transitions departing from it and the probability for each
      * of them to occur.
      */
-    transitionsFrom(state: T): [T, number][] {
-        let transitions = this.withNodeDo(state, node => node.getTransitionsFromHere())
+    async transitionsFrom(state: T): Promise<[T, number][]> {
+        let transitions = await this.withNodeDo(state, node => node.getTransitionsFromHere())
         return transitions.getAllElements().map(state =>
             [state, transitions.getProbability(state)] as [T, number]
         );
@@ -138,8 +138,8 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
      * possible transitions arriving to it and the probability for each
      * of them to occur.
      */
-    transitionsTo(state: T): [T, number][] {
-        let transitions = this.withNodeDo(state, node => node.getTransitionsToHere())
+    async transitionsTo(state: T): Promise<[T, number][]> {
+        let transitions = await this.withNodeDo(state, node => node.getTransitionsToHere())
         return transitions.getAllElements().map(state =>
             [state, transitions.getProbability(state)] as [T, number]
         );
@@ -177,25 +177,25 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
      * associated, and perform a callback function that recieves this querier
      * as a parameter. Returns the result of the callback function.
      */
-    private withServerDo<S>(callback: (server: DatabaseQuerier<T>) => S): S {
-        let server = this.createQuerier();
-        return callback(server);
+    private withQuerierDo<S>(callback: (querier: DatabaseQuerier<T>) => S): S {
+        let querier = this.createQuerier();
+        return callback(querier);
     }
 
     /**
      * Adds an persists a transition from the state represented by this node
      * to the state passed as a parameter.
      */
-    addTransitionTo(toState: T): void {
-        this.withServerDo(server => server.addTransition(this.content, toState));
+    async addTransitionTo(toState: T): Promise<void> {
+        this.withQuerierDo(querier => querier.addTransition(this.content, toState));
     }
 
     /**
      * Gets a node representing a random state following from the state
      * represented by this node.
      */
-    getRandomNextNode(): MarkovChainNode<T> {
-        let transitions = this.getTransitionsFromHere();
+    async getRandomNextNode(): Promise<MarkovChainNode<T>> {
+        let transitions = await this.getTransitionsFromHere();
         if (!transitions.isEmpty()) {
             return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
         }
@@ -208,8 +208,8 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
      * Gets a node representing a random state preceding the state represented
      * by this node.
      */
-    getRandomPreviousNode(): MarkovChainNode<T> {
-        let transitions = this.getTransitionsToHere();
+    async getRandomPreviousNode(): Promise<MarkovChainNode<T>> {
+        let transitions = await this.getTransitionsToHere();
         if (!transitions.isEmpty()) {
             return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
         }
@@ -222,15 +222,15 @@ class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
      * Gets a FrequencySet with all the states that may follow the current
      * state and the probability of the transition to occur.
      */
-    getTransitionsFromHere(): FrequencySet<T> {
-        return this.withServerDo(server => server.getTransitionsFrom(this.content))
+    async getTransitionsFromHere(): Promise<FrequencySet<T>> {
+        return this.withQuerierDo(async querier => await querier.getTransitionsFrom(this.content))
     }
 
     /**
      * Gets a FrequencySet with all the states that may precede the current
      * state and the probability of the transition to occur.
      */
-    getTransitionsToHere(): FrequencySet<T> {
-        return this.withServerDo(server => server.getTransitionsTo(this.content))
+    async getTransitionsToHere(): Promise<FrequencySet<T>> {
+        return this.withQuerierDo(async querier => await querier.getTransitionsTo(this.content))
     }
 }

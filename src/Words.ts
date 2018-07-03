@@ -1,5 +1,5 @@
 import { EqComparable } from "./FrequencySet"
-import { Serializable } from "./DatabaseQuerier"
+import { Serializable } from "./Database"
 import { MarkovChain, MarkovChainProperties } from "./MarkovChain"
 export { Word, InitialWord, TerminalWord, Phraser }
 
@@ -125,9 +125,9 @@ class Phraser {
      * is passed as a parameter.
      * @param chainId The identifier of the Markov chain to be used.
      */
-    generatePhrase(chainId: number): string {
+    async generatePhrase(chainId: number): Promise<string> {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return Phraser.wordsToString(chain.getRandomWalk(
+        return Phraser.wordsToString(await chain.getRandomWalk(
             new InitialWord(),
             word => word.isTerminal()
         ));
@@ -143,33 +143,33 @@ class Phraser {
      * @param addWordsAfter Whether words should or should not be appended
      * to the phrase.
      */
-    extendPhrase(
+    async extendPhrase(
         chainId: number,
         phrase: string,
         addWordsBefore: boolean,
         addWordsAfter: boolean
-    ): string {
+    ): Promise<string> {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
         let words = phrase.split(" ");
         let extendedPhrase = phrase;
         if (words.length > 0) {
-            if (addWordsBefore
-                && chain.transitionsTo(new Word(words[0])).length > 0
+            if (addWordsBefore // fix this, ridiculously underperforming
+                && (await chain.transitionsTo(new Word(words[0]))).length > 0
             ) {
-                extendedPhrase = Phraser.wordsToString(chain.getRandomWalk(
+                extendedPhrase = Phraser.wordsToString((await chain.getRandomWalk(
                     new Word(words[0]),
                     word => word.isInitial(),
                     "backwards"
-                ).slice(1).reverse()) + " " + extendedPhrase;
+                )).slice(1).reverse()) + " " + extendedPhrase;
             }
             if (addWordsAfter
-                && chain.transitionsFrom(new Word(words[words.length - 1])).length > 0
+                && (await chain.transitionsFrom(new Word(words[words.length - 1]))).length > 0
             ) {
                 extendedPhrase = extendedPhrase + " " 
-                + Phraser.wordsToString(chain.getRandomWalk(
+                + Phraser.wordsToString((await chain.getRandomWalk(
                     new Word(words[words.length - 1]),
                     word => word.isTerminal(),
-                ).slice(1));
+                )).slice(1));
             }
         }
         return extendedPhrase;
@@ -180,7 +180,7 @@ class Phraser {
      * @param chainId The Markov chain to feed.
      * @param phrase The phrase to add to the Markov chain.
      */
-    storePhrase(chainId: number, phrase: string): void {
+    async storePhrase(chainId: number, phrase: string): Promise<void> {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
         let words = Phraser.stringToWords(phrase);
         chain.addTransitions(words);
@@ -192,9 +192,9 @@ class Phraser {
      * @param chainId The Markov chain to be used.
      * @param word The word from which the transitions come out.
      */
-    transitionsFrom(chainId: number, word: string): [string, number][] {
+    async transitionsFrom(chainId: number, word: string): Promise<[string, number][]> {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return chain.transitionsFrom(new Word(word)).map(p => [p[0].print(), p[1]] as [string, number]);
+        return (await chain.transitionsFrom(new Word(word))).map(p => [p[0].print(), p[1]] as [string, number]);
     }
 
     /**
@@ -203,8 +203,8 @@ class Phraser {
      * @param chainId The Markov chain to be used.
      * @param word The word to which the transitions arrive.
      */
-    transitionsTo(chainId: number, word: string): [string, number][] {
+    async transitionsTo(chainId: number, word: string): Promise<[string, number][]> {
         let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-        return chain.transitionsTo(new Word(word)).map(p => [p[0].print(), p[1]] as [string, number]);
+        return (await chain.transitionsTo(new Word(word))).map(p => [p[0].print(), p[1]] as [string, number]);
     }
 }

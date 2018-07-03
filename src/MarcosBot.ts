@@ -66,40 +66,40 @@ class MarcosBotApplication {
             },
             {
                 command: "message",
-                handler: message => {
-                    const response = this.phraser.generatePhrase(message.chat.id);
+                handler: async message => {
+                    const response = await this.phraser.generatePhrase(message.chat.id);
                     this.answer(message, response);
                 }
             },
             {
                 command: "beginWith",
                 argRegExp: "(.+)",
-                handler: (message, argMatch) => {
-                    const response = this.phraser.extendPhrase(message.chat.id, argMatch[1], false, true)
+                handler: async (message, argMatch) => {
+                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], false, true)
                     this.answer(message, response);
                 }
             },
             {
                 command: "endWith",
                 argRegExp: "(.+)",
-                handler: (message, argMatch) => {
-                    const response = this.phraser.extendPhrase(message.chat.id, argMatch[1], true, false)
+                handler: async (message, argMatch) => {
+                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], true, false)
                     this.answer(message, response);
                 }
             },
             {
                 command: "use",
                 argRegExp: "(.+)",
-                handler: (message, argMatch) => {
-                    const response = this.phraser.extendPhrase(message.chat.id, argMatch[1], true, true)
+                handler: async (message, argMatch) => {
+                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], true, true)
                     this.answer(message, response);
                 }
             },
             {
                 command: "transitionsFrom", // TODO: Handle empty chains
                 argRegExp: "(\\S+)$",
-                handler: (message, argMatch) => {
-                    const transitions = this.phraser.transitionsFrom(message.chat.id, argMatch[1])
+                handler: async (message, argMatch) => {
+                    const transitions = await this.phraser.transitionsFrom(message.chat.id, argMatch[1])
                     const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
                     this.answer(message, response);
                 }
@@ -107,8 +107,8 @@ class MarcosBotApplication {
             {
                 command: "transitionsTo", // TODO: Handle empty chains
                 argRegExp: "(\\S+)$",
-                handler: (message, argMatch) => {
-                    const transitions = this.phraser.transitionsTo(message.chat.id, argMatch[1])
+                handler: async (message, argMatch) => {
+                    const transitions = await this.phraser.transitionsTo(message.chat.id, argMatch[1])
                     const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
                     this.answer(message, response);
                 }
