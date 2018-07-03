@@ -144,14 +144,16 @@ class MarcosBotApplication {
     private handleTextMessage(message: TelegramBot.Message) {
         const messageText = message.text;
         const commandMatch = /^\/([^\s@]+)@(\S+)?/.exec(messageText);
-        if (commandMatch && (!commandMatch[2] || commandMatch[2] == this.botName)) {
-            const command = commandMatch[1];
-            const action = this.getAction(command);
-            if (action) {
-                this.executeAction(message, action);
-            }
-            else {
-                this.handleUnknownCommand(message, command);
+        if (commandMatch) {
+            if (!commandMatch[2] || commandMatch[2] == this.botName) {
+                const command = commandMatch[1];
+                const action = this.getAction(command);
+                if (action) {
+                    this.executeAction(message, action);
+                }
+                else {
+                    this.handleUnknownCommand(message, command);
+                }
             }
         }
         else {
