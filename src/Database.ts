@@ -1,10 +1,10 @@
 import * as sqlite from "sqlite"
 import { FrequencySet, EqComparable } from "./FrequencySet"
-export { DatabaseQuerier, Serializable, createSchema }
+export { DatabaseQuerier, Serializable, createDatabaseSchema }
 
 const dbPromise: Promise<sqlite.Database> = sqlite.open("local/marcos.sqlite3");
 
-var createSchema = async function() {
+const createDatabaseSchema = async function() {
     const db: sqlite.Database = await dbPromise;
     db.run(`CREATE TABLE IF NOT EXISTS transitions (
         id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
@@ -15,8 +15,6 @@ var createSchema = async function() {
         CONSTRAINT uniqueTransitions UNIQUE (chainid, fromState, toState)
     )`)
 };
-
-createSchema();
 
 interface Serializable<T> {
     serialize(): string;

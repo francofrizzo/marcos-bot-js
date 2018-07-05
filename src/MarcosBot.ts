@@ -1,4 +1,5 @@
 import TelegramBot = require('node-telegram-bot-api');
+import { MarcosBotAction } from './Actions'
 import { Word, Phraser } from "./Words"
 import { MarkovChainProperties } from './MarkovChain';
 export { MarcosBotApplication, MarcosBotConfiguration }
@@ -11,22 +12,12 @@ interface MarcosBotConfiguration { // TODO: see how to provide defaults
     mutationProbability: number
 }
 
-type MarcosBotAction = {
-    command: string,
-    description?: string,
-    handler: MarcosBotActionHandler,
-    argRegExp?: string,
-    // requiresAdmin?: boolean
-};
-
-type MarcosBotActionHandler = (message?: TelegramBot.Message, argMatch?: string[]) => void;
-
 class MarcosBotApplication {
     private config: MarcosBotConfiguration;
     private bot: TelegramBot;
-    private botName: string;
     private actions: MarcosBotAction[] = [];
-    private phraser: Phraser;
+    botName: string;
+    phraser: Phraser;
 
     constructor(config: MarcosBotConfiguration) {
         this.config = config;
@@ -36,7 +27,6 @@ class MarcosBotApplication {
     private async setup(): Promise<void> {
         this.setupPhraser();
         await this.createBot();
-        this.setupActions();
         this.setupListeners();
     }
 
@@ -47,72 +37,6 @@ class MarcosBotApplication {
     private async createBot(): Promise<void> {
         this.bot = new TelegramBot(this.config.token, { polling: true });
         this.botName = (await this.bot.getMe() as TelegramBot.User).username;
-    }
-
-    private setupActions(): void {
-        [
-            {
-                command: "start",
-                handler: message => {
-                    const response = this.$("WELCOME_MESSAGE")
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "message",
-                handler: async message => {
-                    const response = await this.phraser.generatePhrase(message.chat.id);
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "beginWith",
-                argRegExp: "(.+)",
-                handler: async (message, argMatch) => {
-                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], false, true)
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "endWith",
-                argRegExp: "(.+)",
-                handler: async (message, argMatch) => {
-                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], true, false)
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "use",
-                argRegExp: "(.+)",
-                handler: async (message, argMatch) => {
-                    const response = await this.phraser.extendPhrase(message.chat.id, argMatch[1], true, true)
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "transitionsFrom", // TODO: Handle empty chains
-                argRegExp: "(\\S+)$",
-                handler: async (message, argMatch) => {
-                    const transitions = await this.phraser.transitionsFrom(message.chat.id, argMatch[1])
-                    const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "transitionsTo", // TODO: Handle empty chains
-                argRegExp: "(\\S+)$",
-                handler: async (message, argMatch) => {
-                    const transitions = await this.phraser.transitionsTo(message.chat.id, argMatch[1])
-                    const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
-                    this.answer(message, response);
-                }
-            },
-            {
-                command: "someone",
-                argRegExp: "(.+)",
-                handler: (message, argMatch) => { }
-            }
-        ].forEach(action => this.registerAction(action));
     }
 
     private setupListeners(): void {
@@ -126,16 +50,17 @@ class MarcosBotApplication {
         return this.actions.filter(action => action.command == command)[0];
     }
 
-    private registerAction(action: MarcosBotAction) {
+    registerAction(action: MarcosBotAction) {
         if (!this.getAction(action.command)) {
             this.actions.push(action)
         }
         else {
-            throw this.$("ERR_DUPLICATED_ACTION");
+            throw this.$("There already exists an action registered for " +
+                "the command '" + action.command + "'");
         }
     }
 
-    private handleTextMessage(message: TelegramBot.Message) {
+    handleTextMessage(message: TelegramBot.Message) {
         const messageText = message.text;
         const commandMatch = /^\/([^\s@]+)(?:@(\S+))?(?:\s(.*))?/.exec(messageText);
         if (commandMatch) {
@@ -161,18 +86,17 @@ class MarcosBotApplication {
         }
     }
 
-    private executeAction(
+    executeAction(
         message: TelegramBot.Message,
         action: MarcosBotAction,
         args: string
     ) {
-        const effectiveRegExp = RegExp("^\/[^\s@]+@\S+?" + // TODO: Find a better solution for this bug
-            (action.argRegExp ? " " + action.argRegExp : ""));
-        const argMatch = effectiveRegExp.exec(message.text);
+        const argRegExp = action.argRegExp || /.*/;
+        const argMatch = argRegExp.exec(args);
         if (argMatch) {
-            action.handler(message, argMatch);
+            action.handler(this, message, argMatch);
         }
-        else { // Malformed arguments
+        else {
             this.answer(message, this.$("ERR_MALFORMED_ARGUMENTS"));
         }
     }
@@ -210,11 +134,11 @@ class MarcosBotApplication {
         }
     }
 
-    private answer(message: TelegramBot.Message, response: string) {
+    answer(message: TelegramBot.Message, response: string) {
         this.bot.sendMessage(message.chat.id, response);
     }
 
-    private $(id: string): string {
+    $(id: string): string {
         return this.config.locales[id];
     }
 }
