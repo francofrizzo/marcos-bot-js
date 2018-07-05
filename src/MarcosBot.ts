@@ -162,7 +162,7 @@ class MarcosBotApplication {
     }
 
     private executeAction(message: TelegramBot.Message, action: MarcosBotAction) {
-        const effectiveRegExp = RegExp("^/" + action.command +
+        const effectiveRegExp = RegExp("^\/[^\s@]+@\S+?" + // TODO: Find a better solution for this bug
             (action.argRegExp ? " " + action.argRegExp : ""));
         const argMatch = effectiveRegExp.exec(message.text);
         if (argMatch) {
