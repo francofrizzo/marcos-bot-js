@@ -3,14 +3,6 @@ import { Word, Phraser } from "./Words"
 import { MarkovChainProperties } from './MarkovChain';
 export { MarcosBotApplication, MarcosBotConfiguration }
 
-// Pending features:
-// - Name replacing
-// - Logging
-// - Easter eggs (per-chat)
-// Pending tasks:
-// - Replace database mocker with actual databsae
-// - Thoroughly test MarkovChain and FrequencySet algorithms
-
 interface MarcosBotConfiguration { // TODO: see how to provide defaults
     token: string;
     locales: { [ id: string ]: string };
@@ -125,7 +117,9 @@ class MarcosBotApplication {
 
     private setupListeners(): void {
         this.bot.on("text", message => this.handleTextMessage(message));
-        this.bot.on("text", message => this.handleAyyLmao(message));
+        if (this.config.listenToAyyLmao) {
+            this.bot.on("text", message => this.handleAyyLmao(message));
+        }
     }
 
     private getAction(command: string): MarcosBotAction {
@@ -143,15 +137,21 @@ class MarcosBotApplication {
 
     private handleTextMessage(message: TelegramBot.Message) {
         const messageText = message.text;
-        const commandMatch = /^\/([^\s@]+)@(\S+)?/.exec(messageText);
+        const commandMatch = /^\/([^\s@]+)(?:@(\S+))?(?:\s(.*))?/.exec(messageText);
         if (commandMatch) {
-            if (!commandMatch[2] || commandMatch[2] == this.botName) {
-                const command = commandMatch[1];
+            const command = commandMatch[1];
+            const recipient = commandMatch[2];
+            const args = commandMatch[3];
+            
+            if (!recipient || recipient == this.botName) {
                 const action = this.getAction(command);
                 if (action) {
-                    this.executeAction(message, action);
+                    this.executeAction(message, action, args);
                 }
-                else {
+                // We don't want to generate noise in group chats
+                // answering to unknown commands not directly targeted
+                // at this bot, hence the following condition
+                else if (message.chat.type == "private" || recipient == this.botName) {
                     this.handleUnknownCommand(message, command);
                 }
             }
@@ -161,7 +161,11 @@ class MarcosBotApplication {
         }
     }
 
-    private executeAction(message: TelegramBot.Message, action: MarcosBotAction) {
+    private executeAction(
+        message: TelegramBot.Message,
+        action: MarcosBotAction,
+        args: string
+    ) {
         const effectiveRegExp = RegExp("^\/[^\s@]+@\S+?" + // TODO: Find a better solution for this bug
             (action.argRegExp ? " " + action.argRegExp : ""));
         const argMatch = effectiveRegExp.exec(message.text);
@@ -182,22 +186,20 @@ class MarcosBotApplication {
     }
 
     private handleAyyLmao(message: TelegramBot.Message) {
-        if (this.config.listenToAyyLmao) {
-            if (/rip/i.exec(message.text)) {
-                this.answer(message, "in pieces");
+        if (/rip/i.exec(message.text)) {
+            this.answer(message, "in pieces");
+        }
+        if (/alien|ayy.*lmao|lmao.*ayy/i.exec(message.text)) {
+            this.answer(message, "ayy lmao");
+        }
+        else {
+            let match = /ayy(y*)/i.exec(message.text); 
+            if (match) {
+                this.answer(message, "lmao" + "o".repeat(match[1].length));
             }
-            if (/alien|ayy.*lmao|lmao.*ayy/i.exec(message.text)) {
-                this.answer(message, "ayy lmao");
-            }
-            else {
-                let match = /ayy(y*)/i.exec(message.text); 
-                if (match) {
-                    this.answer(message, "lmao" + "o".repeat(match[1].length));
-                }
-                match = /lmao(o*)/i.exec(message.text);
-                if (match) {
-                    this.answer(message, "ayy" + "y".repeat(match[1].length));
-                }
+            match = /lmao(o*)/i.exec(message.text);
+            if (match) {
+                this.answer(message, "ayy" + "y".repeat(match[1].length));
             }
         }
     }
