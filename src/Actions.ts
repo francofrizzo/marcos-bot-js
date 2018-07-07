@@ -67,7 +67,7 @@ namespace Actions {
 
     export const transitionsFrom: MarcosBotAction = {
         command: "transitionsfrom", // TODO: Handle empty chains
-        argRegExp: /(\\S+)$/,
+        argRegExp: /(\S+)$/,
         handler: async (bot, message, argMatch) => {
             const transitions = await bot.phraser.transitionsFrom(
                 message.chat.id, argMatch[1])
@@ -78,7 +78,7 @@ namespace Actions {
 
     export const transitionsTo: MarcosBotAction = {
         command: "transitionsto", // TODO: Handle empty chains
-        argRegExp: /(\\S+)$/,
+        argRegExp: /(\S+)$/,
         handler: async (bot, message, argMatch) => {
             const transitions = await bot.phraser.transitionsTo(
                 message.chat.id, argMatch[1])
