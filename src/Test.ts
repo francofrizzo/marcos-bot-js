@@ -1,9 +1,17 @@
-import { MarcosBotApplication } from "./MarcosBot"
+import { MarcosBotApplication, MarcosBotConfiguration } from "./MarcosBot"
 import "./MarcosBot"
 import { Actions } from "./Actions";
+import { exists } from "fs";
 export { marcos }
 
-let config = require("../local/config.json");
+let config : MarcosBotConfiguration;
+try {
+    config = require("../local/config.json");
+} catch (e) {
+    console.log("Error: The configuration file (local/config.json) could not be found");
+    process.exit(1);
+}
+// Note that it assumed that the config file is well-formed
 var marcos = new MarcosBotApplication(config);
 console.log("MarcosBot succesfully initialized");
 

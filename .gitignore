@@ -3,6 +3,7 @@ dist
 
 # Local configuration files
 local
+!local/config.json
 scripts
 
 # Node.js files
