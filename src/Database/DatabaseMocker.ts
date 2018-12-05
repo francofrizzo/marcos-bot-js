@@ -1,5 +1,5 @@
-import { FrequencySet, EqComparable } from "./FrequencySet"
 import { Serializable } from "./Database"
+import { FrequencySet, EqComparable } from "../MarkovChain/FrequencySet"
 export { DatabaseMocker, dbMocker }
 
 class DatabaseMocker {

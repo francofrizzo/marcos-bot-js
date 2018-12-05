@@ -1,6 +1,6 @@
-import { MarcosBotApplication, MarcosBotConfiguration } from "./MarcosBot"
-import "./MarcosBot"
-import { Actions } from "./Actions";
+import { MarcosBotApplication, MarcosBotConfiguration } from "./MainApp/MarcosBot"
+import "./MainApp/MarcosBot"
+import { Actions } from "./MainApp/Actions";
 import { exists } from "fs";
 export { marcos }
 

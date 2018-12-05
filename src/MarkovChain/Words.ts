@@ -1,6 +1,6 @@
 import { EqComparable } from "./FrequencySet"
-import { Serializable } from "./Database"
 import { MarkovChain, MarkovChainProperties } from "./MarkovChain"
+import { Serializable } from "../Database/Database"
 export { Word, InitialWord, TerminalWord, Phraser }
 
 /**

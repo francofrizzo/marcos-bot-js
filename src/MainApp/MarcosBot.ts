@@ -1,7 +1,7 @@
 import TelegramBot = require('node-telegram-bot-api');
 import { MarcosBotAction } from './Actions'
-import { Word, Phraser } from "./Words"
-import { MarkovChainProperties } from './MarkovChain';
+import { Word, Phraser } from "../MarkovChain/Words"
+import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
 export { MarcosBotApplication, MarcosBotConfiguration }
 
 interface MarcosBotConfiguration { // TODO: see how to provide defaults

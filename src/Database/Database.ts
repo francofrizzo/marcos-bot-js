@@ -1,5 +1,5 @@
 import * as sqlite from "sqlite"
-import { FrequencySet, EqComparable } from "./FrequencySet"
+import { FrequencySet, EqComparable } from "../MarkovChain/FrequencySet"
 export { DatabaseQuerier, Serializable, createDatabaseSchema }
 
 const dbPromise: Promise<sqlite.Database> = sqlite.open("local/marcos.sqlite3");

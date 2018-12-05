@@ -1,5 +1,5 @@
 import { FrequencySet, EqComparable } from "./FrequencySet"
-import { DatabaseQuerier, Serializable } from "./Database"
+import { DatabaseQuerier, Serializable } from "../Database/Database"
 export { MarkovChain, MarkovChainProperties }
 
 // TODO: Add mutations to generation
