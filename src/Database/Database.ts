@@ -13,15 +13,16 @@ const createDatabaseSchema = async function() {
         fromState    TEXT     NOT NULL,
         toState      TEXT     NOT NULL,
         frequency    INTEGER  NOT NULL,
-        CONSTRAINT uniqueTransitions UNIQUE (chainid, fromState, toState)
+        UNIQUE (chainid, fromState, toState)
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS users (
-        userId       INTEGER  PRIMARY KEY  AUTOINCREMENT,
+        id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
+        userId       INTEGER  NOT NULL,
         chainId      INTEGER  NOT NULL,
         firstName    TEXT,
         lastName     TEXT,
         username     TEXT,
-        CONSTRAINT uniqueUsers UNIQUE (userId, chainId)
+        UNIQUE (userId, chainId)
     )`);
 };
 
