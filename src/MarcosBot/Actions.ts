@@ -39,8 +39,10 @@ namespace Actions {
         command: "beginwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            const response = await bot.phraser.extendPhrase(
+            let response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], false, true)
+            response = await bot.replacePlaceholdersWithUsernames(
+                response, message.chat.id)
             bot.answer(message, response);
         }
     }
@@ -49,8 +51,10 @@ namespace Actions {
         command: "endwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            const response = await bot.phraser.extendPhrase(
+            let response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], true, false)
+            response = await bot.replacePlaceholdersWithUsernames(
+                response, message.chat.id)
             bot.answer(message, response);
         }
     }
@@ -59,8 +63,10 @@ namespace Actions {
         command: "use",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            const response = await bot.phraser.extendPhrase(
+            let response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], true, true)
+            response = await bot.replacePlaceholdersWithUsernames(
+                response, message.chat.id)
             bot.answer(message, response);
         }
     }
@@ -90,7 +96,11 @@ namespace Actions {
     export const someone: MarcosBotAction = {
         command: "someone",
         argRegExp: /(.+)/,
-        handler: () => { }
+        handler: async (bot, message, argMatch) => {
+            const response = await bot.replacePlaceholdersWithUsernames(
+                argMatch[1], message.chat.id);
+            bot.answer(message, response);
+        }
     }
 
 }

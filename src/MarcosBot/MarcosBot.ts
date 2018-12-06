@@ -1,5 +1,5 @@
 import { MarcosBotAction } from './Actions'
-import { Messenger, Message, TextMessage } from './Messenger'
+import { Messenger, User, Message, TextMessage } from './Messenger'
 import { Word, Phraser } from "../MarkovChain/Words"
 import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
 import { DatabaseUserQuerier } from "../Database/Database"
@@ -36,6 +36,40 @@ class MarcosBot {
     storeMessageUser(message: Message): void {
         let querier = new DatabaseUserQuerier(message.chat.id);
         querier.addUser(message.from);
+    }
+
+    async getChatUsers(chatId: number): Promise<User[]> {
+        let querier = new DatabaseUserQuerier(chatId);
+        return querier.getUsers();
+    }
+
+    async replacePlaceholdersWithUsernames(text: string, chatId: number): Promise<string> {
+        const placeholderRegex = /@(\?|\d+)/g;
+        const chatUsers = await this.getChatUsers(chatId);
+        const randomChatUser: () => string = function() {
+            let user = chatUsers[Math.floor(Math.random() * chatUsers.length)];
+            if (user.username) return "@" + user.username;
+            else return [user.first_name, user.last_name].join(" ").trim();
+        }
+        
+        let replacements: Map<number, string> = new Map();
+
+        return text.replace(placeholderRegex, (match, id) => {
+            let replacement: string;
+            if (id == "?") {
+                replacement = randomChatUser();
+            }
+            else {
+                if (replacements.has(id)) {
+                    replacement = replacements.get(id)!;
+                }
+                else {
+                    replacement = randomChatUser();
+                    replacements.set(id, replacement);
+                }
+            }
+            return replacement;
+        });
     }
 
     private getAction(command: string): MarcosBotAction {

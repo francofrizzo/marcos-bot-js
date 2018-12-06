@@ -89,7 +89,7 @@ class CommandLineMessenger implements Messenger {
             let message: TextMessage = {
                 chat: { id: chatId, type: chatType },
                 text: d.toString().trim(),
-                from: { id: 1, first_name: "Command Line User" }
+                from: { id: 3, first_name: "Franco", username: "pepe" }
             };
             this.listeners.forEach(listener => {
                 listener(message);
