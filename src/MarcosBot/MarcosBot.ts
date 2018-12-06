@@ -58,7 +58,7 @@ class MarcosBot {
         if (commandMatch) {
             const command = commandMatch[1];
             const recipient = commandMatch[2];
-            const args = commandMatch[3];
+            const args = commandMatch[3] != undefined ? commandMatch[3] : "";
             
             if (!recipient || recipient == this.messenger.botUsername) {
                 const action = this.getAction(command);
