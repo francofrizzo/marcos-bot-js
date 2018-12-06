@@ -10,7 +10,7 @@ class Word implements EqComparable<Word>, Serializable<Word> {
     public string: string;
 
     constructor(string: string) {
-        if (string) this.string = string.toLowerCase();
+        this.string = string.toLowerCase();
     }
 
     /**
@@ -66,7 +66,7 @@ class Word implements EqComparable<Word>, Serializable<Word> {
  * A special word marking the beginning of a phrase.
  */
 class InitialWord extends Word {
-    constructor() { super(undefined); }
+    constructor() { super(""); }
     isInitial(): boolean { return true; }
     print(): string { return "<start>"; }
     equals(other: Word): boolean { return other.isInitial(); }
@@ -77,7 +77,7 @@ class InitialWord extends Word {
  * A special word marking the end of a phrase.
  */
 class TerminalWord extends Word {
-    constructor() { super(undefined); }
+    constructor() { super(""); }
     isTerminal(): boolean { return true; }
     print(): string { return "<end>"; }
     equals(other: Word): boolean { return other.isTerminal(); }

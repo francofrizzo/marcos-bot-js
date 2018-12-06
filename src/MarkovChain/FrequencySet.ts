@@ -66,8 +66,17 @@ class FrequencySet<T extends EqComparable<T>> {
     private ifWrapperExistsDo<S>(
         element: T,
         callback: (wrapper: FrequencySetElementWrapper<T>) => S,
+        elseCallback: S | (() => S)
+    ): S;
+    private ifWrapperExistsDo<S>(
+        element: T,
+        callback: (wrapper: FrequencySetElementWrapper<T>) => S,
+    ): S | undefined;
+    private ifWrapperExistsDo<S>(
+        element: T,
+        callback: (wrapper: FrequencySetElementWrapper<T>) => S,
         elseCallback?: S | (() => S)
-    ): S {
+    ): S | undefined {
         let wrapper = this.getWrapperFor(element, false);
         if (wrapper) return callback(wrapper);
         else if (elseCallback) {

@@ -18,7 +18,7 @@ class DatabaseMocker {
         this.transitions[dbId].push([elementFrom, elementTo]);
     }
 
-    getTransitionsFrom(dbId: number, element: string): string[] {
+    getTransitionsFrom(dbId: number, element: string): string[] | undefined {
         if (this.isDefined(dbId)) {
             return this.transitions[dbId]
                 .filter(transition => transition[0] == element)
@@ -26,7 +26,7 @@ class DatabaseMocker {
         }
     }
 
-    getTransitionsTo(dbId: number, element: string): string[] {
+    getTransitionsTo(dbId: number, element: string): string[] | undefined {
         if (this.isDefined(dbId)) {
             return this.transitions[dbId]
                 .filter(transition => transition[1] == element)
@@ -53,18 +53,22 @@ class MockDatabaseQuerier<T extends Serializable<T> & EqComparable<T>> {
     getTransitionsFrom(element: T): FrequencySet<T> {
         let transitions = new FrequencySet<T>();
         let transitionsAsStrings = dbMocker.getTransitionsFrom(this.chainId, element.serialize());
-        transitionsAsStrings.forEach(string =>
-            transitions.addAppearence(element.deserialize(string))
-        );
+        if (transitionsAsStrings) {
+            transitionsAsStrings.forEach(string =>
+                transitions.addAppearence(element.deserialize(string))
+            );
+        }
         return transitions;
     }
 
     getTransitionsTo(element: T): FrequencySet<T> {
         let transitions = new FrequencySet<T>();
         let transitionsAsStrings = dbMocker.getTransitionsTo(this.chainId, element.serialize());
-        transitionsAsStrings.forEach(string =>
-            transitions.addAppearence(element.deserialize(string))
-        );
+        if (transitionsAsStrings) {
+            transitionsAsStrings.forEach(string =>
+                transitions.addAppearence(element.deserialize(string))
+            );
+        }
         return transitions;
     }
 }
