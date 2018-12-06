@@ -39,10 +39,10 @@ namespace Actions {
         command: "beginwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.phraser.extendPhrase(
-                message.chat.id, argMatch[1], false, true)
-            response = await bot.replacePlaceholdersWithUsernames(
-                response, message.chat.id)
+            let response = await bot.replacePlaceholdersWithUsernames(
+                argMatch[1], message.chat.id);
+            response = await bot.phraser.extendPhrase(
+                message.chat.id, response, false, true)
             bot.answer(message, response);
         }
     }
@@ -51,10 +51,10 @@ namespace Actions {
         command: "endwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.phraser.extendPhrase(
-                message.chat.id, argMatch[1], true, false)
-            response = await bot.replacePlaceholdersWithUsernames(
-                response, message.chat.id)
+            let response = await bot.replacePlaceholdersWithUsernames(
+                argMatch[1], message.chat.id);
+            response = await bot.phraser.extendPhrase(
+                message.chat.id, response, true, false)
             bot.answer(message, response);
         }
     }
@@ -63,10 +63,10 @@ namespace Actions {
         command: "use",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.phraser.extendPhrase(
-                message.chat.id, argMatch[1], true, true)
-            response = await bot.replacePlaceholdersWithUsernames(
-                response, message.chat.id)
+            let response = await bot.replacePlaceholdersWithUsernames(
+                argMatch[1], message.chat.id);
+            response = await bot.phraser.extendPhrase(
+                message.chat.id, response, true, true)
             bot.answer(message, response);
         }
     }
