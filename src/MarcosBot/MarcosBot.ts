@@ -44,7 +44,6 @@ class MarcosBot {
     }
 
     async replacePlaceholdersWithUsernames(text: string, chatId: number): Promise<string> {
-        const placeholderRegex = /@(\?|\d+)/g;
         const chatUsers = await this.getChatUsers(chatId);
         const randomChatUser: () => string = function() {
             let user = chatUsers[Math.floor(Math.random() * chatUsers.length)];
@@ -52,24 +51,27 @@ class MarcosBot {
             else return [user.first_name, user.last_name].join(" ").trim();
         }
         
+        const placeholderRegex = /^@(\d+)?$/g;
         let replacements: Map<number, string> = new Map();
 
-        return text.replace(placeholderRegex, (match, id) => {
-            let replacement: string;
-            if (id == "?") {
-                replacement = randomChatUser();
-            }
-            else {
-                if (replacements.has(id)) {
-                    replacement = replacements.get(id)!;
+        return text.split(" ").map(word =>
+            word.replace(placeholderRegex, (match, id) => {
+                let replacement: string;
+                if (id) {
+                    if (replacements.has(id)) {
+                        replacement = replacements.get(id)!;
+                    }
+                    else {
+                        replacement = randomChatUser();
+                        replacements.set(id, replacement);
+                    }
                 }
                 else {
                     replacement = randomChatUser();
-                    replacements.set(id, replacement);
                 }
-            }
-            return replacement;
-        });
+                return replacement;
+            })
+        ).join(" ")
     }
 
     private getAction(command: string): MarcosBotAction {
