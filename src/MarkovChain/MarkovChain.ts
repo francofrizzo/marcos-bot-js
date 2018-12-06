@@ -1,5 +1,5 @@
 import { FrequencySet, Serializable } from "./FrequencySet"
-import { DatabaseQuerier } from "../Database/Database"
+import { DatabaseTransitionQuerier } from "../Database/Database"
 export { MarkovChain, MarkovChainProperties }
 
 // TODO: Add mutations to generation
@@ -168,8 +168,8 @@ class MarkovChainNode<T extends Serializable<T>> {
      * Creates and returns a DatabaseQuerier for the Markov chain to which
      * this node is associated.
      */
-    private createQuerier(): DatabaseQuerier<T> {
-        return new DatabaseQuerier<T>(this.chain.id);
+    private createQuerier(): DatabaseTransitionQuerier<T> {
+        return new DatabaseTransitionQuerier<T>(this.chain.id);
     }
 
     /**
@@ -177,7 +177,7 @@ class MarkovChainNode<T extends Serializable<T>> {
      * associated, and perform a callback function that recieves this querier
      * as a parameter. Returns the result of the callback function.
      */
-    private withQuerierDo<S>(callback: (querier: DatabaseQuerier<T>) => S): S {
+    private withQuerierDo<S>(callback: (querier: DatabaseTransitionQuerier<T>) => S): S {
         let querier = this.createQuerier();
         return callback(querier);
     }

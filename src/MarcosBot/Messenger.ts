@@ -1,15 +1,23 @@
 import TelegramBot = require("node-telegram-bot-api");
-export { Messenger, TelegramBotMessenger, Message, TextMessage, TextMessageHandler, CommandLineMessenger }
+export { Messenger, TelegramBotMessenger, User, Message, TextMessage, TextMessageHandler, CommandLineMessenger }
 
 // This decouples the type of the messages used inside our application
 // from the specific Telegram message format
 type ChatType = "private" | "group" | "supergroup" | "channel";
+interface User {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+}
 interface Message {
     chat: { id: number, type: ChatType };
+    from: User;
 }
 interface TextMessage extends Message {
     text: string;
 }
+type MessageHandler = (message: Message) => void;
 type TextMessageHandler = (message: TextMessage) => void;
 
 /**
@@ -22,6 +30,12 @@ interface Messenger {
      * The username by which the bot is identified in conversations
      */
     botUsername: string | undefined;
+
+    /**
+     * Specifies that a certain handler should be executed by the messenger
+     * any time that a message of any type is recieved
+     */
+    addMessageListener(handler: MessageHandler): void;
 
     /**
      * Specifies that a certain handler should be executed by the messenger
@@ -51,6 +65,10 @@ class TelegramBotMessenger implements Messenger {
     private async findOutBotUsername(): Promise<void> {
         this.botUsername = (await this.bot.getMe() as TelegramBot.User).username;
     }
+
+    addMessageListener(handler: TextMessageHandler) {
+        this.bot.on("message", handler);
+    }
     
     addTextMessageListener(handler: TextMessageHandler) {
         this.bot.on("text", handler);
@@ -70,7 +88,8 @@ class CommandLineMessenger implements Messenger {
         stdin.addListener("data", d => {
             let message: TextMessage = {
                 chat: { id: chatId, type: chatType },
-                text: d.toString().trim()
+                text: d.toString().trim(),
+                from: { id: 1, first_name: "Command Line User" }
             };
             this.listeners.forEach(listener => {
                 listener(message);
@@ -78,8 +97,12 @@ class CommandLineMessenger implements Messenger {
         });
     }
 
-    addTextMessageListener(handler: TextMessageHandler) {
+    addMessageListener(handler: TextMessageHandler) {
         this.listeners.push(handler);
+    }
+
+    addTextMessageListener(handler: TextMessageHandler) {
+        this.addMessageListener(handler);
     }
 
     sendMessage(chatId: number, text: string): void {

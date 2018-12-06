@@ -2,6 +2,7 @@ import { MarcosBotAction } from './Actions'
 import { Messenger, Message, TextMessage } from './Messenger'
 import { Word, Phraser } from "../MarkovChain/Words"
 import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
+import { DatabaseUserQuerier } from "../Database/Database"
 export { MarcosBot, MarcosBotConfiguration }
 
 interface MarcosBotConfiguration { // TODO: see how to provide defaults
@@ -25,10 +26,16 @@ class MarcosBot {
     }
 
     private setupListeners(): void {
+        this.messenger.addMessageListener(message => this.storeMessageUser(message));
         this.messenger.addTextMessageListener(message => this.handleTextMessage(message));
         if (this.config.listenToAyyLmao) {
             this.messenger.addTextMessageListener(message => this.handleAyyLmao(message));
         }
+    }
+
+    storeMessageUser(message: Message): void {
+        let querier = new DatabaseUserQuerier(message.chat.id);
+        querier.addUser(message.from);
     }
 
     private getAction(command: string): MarcosBotAction {
