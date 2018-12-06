@@ -1,12 +1,11 @@
-import { EqComparable } from "./FrequencySet"
+import { Serializable } from "./FrequencySet"
 import { MarkovChain, MarkovChainProperties } from "./MarkovChain"
-import { Serializable } from "../Database/Database"
 export { Word, InitialWord, TerminalWord, Phraser }
 
 /**
  * Represents a word that can be used as a state for a Markov chain.
  */
-class Word implements EqComparable<Word>, Serializable<Word> {
+class Word implements Serializable<Word> {
     public string: string;
 
     constructor(string: string) {

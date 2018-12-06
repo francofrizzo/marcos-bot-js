@@ -1,6 +1,6 @@
 import * as sqlite from "sqlite"
-import { FrequencySet, EqComparable } from "../MarkovChain/FrequencySet"
-export { DatabaseQuerier, Serializable, createDatabaseSchema }
+import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet"
+export { DatabaseQuerier, createDatabaseSchema }
 
 const dbPromise: Promise<sqlite.Database> = sqlite.open("local/marcos.sqlite3");
 
@@ -16,13 +16,7 @@ const createDatabaseSchema = async function() {
     )`)
 };
 
-interface Serializable<T> {
-    serialize(): string;
-    deserialize(serialized: string): T; // Language shortcoming: this should
-    // ideally be a static method
-}
-
-class DatabaseQuerier<T extends Serializable<T> & EqComparable<T>> {
+class DatabaseQuerier<T extends Serializable<T>> {
     chainId: number;
 
     constructor(chainId: number) {
@@ -51,8 +45,8 @@ class DatabaseQuerier<T extends Serializable<T> & EqComparable<T>> {
         const db: sqlite.Database = await dbPromise;
         let transitions = new FrequencySet<T>();
         let rows = await db.all(`
-            SELECT toState, frequency FROM transitions
-                WHERE chainId = $chainId AND fromState = $fromState
+        SELECT toState, frequency FROM transitions
+        WHERE chainId = $chainId AND fromState = $fromState
         `, { $chainId: this.chainId, $fromState: state.serialize() });
         rows.forEach(row => {
             transitions.addAppearences(state.deserialize(row.toState), row.frequency);

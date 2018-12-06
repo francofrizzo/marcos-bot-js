@@ -1,5 +1,5 @@
-import { FrequencySet, EqComparable } from "./FrequencySet"
-import { DatabaseQuerier, Serializable } from "../Database/Database"
+import { FrequencySet, Serializable } from "./FrequencySet"
+import { DatabaseQuerier } from "../Database/Database"
 export { MarkovChain, MarkovChainProperties }
 
 // TODO: Add mutations to generation
@@ -16,7 +16,7 @@ interface MarkovChainProperties<T> {
  * This class allows the representation of a Markov chain in which the
  * states are elements of the type T.
  */
-class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
+class MarkovChain<T extends Serializable<T>> {
     id: number;
     properties: MarkovChainProperties<T>;
 
@@ -151,7 +151,7 @@ class MarkovChain<T extends Serializable<T> & EqComparable<T>> {
  * It encapsulates the logic necessary for querying, modifying and persisting
  * the transitions in and out of a certain state.
  */
-class MarkovChainNode<T extends Serializable<T> & EqComparable<T>> {
+class MarkovChainNode<T extends Serializable<T>> {
     content: T;
     chain: MarkovChain<T>;
 

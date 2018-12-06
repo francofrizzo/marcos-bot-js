@@ -1,11 +1,9 @@
-export { FrequencySet, EqComparable }
+export { FrequencySet, Serializable }
 
-/**
- * An object which can be compared by observational equality (`equals()`) with
- * an object of class T.
- */
-interface EqComparable<T> {
-    equals(other: T): boolean;
+interface Serializable<T> {
+    serialize(): string;
+    deserialize(serialized: string): T; // Language shortcoming: this should
+    // ideally be a static method
 }
 
 /**
@@ -14,8 +12,8 @@ interface EqComparable<T> {
  * It allows to retrieve a random element, with the probability of retrieving
  * a certain element of the set being the element's relative frequency.
  */
-class FrequencySet<T extends EqComparable<T>> {
-    public elementWrappers: FrequencySetElementWrapper<T>[] = [];
+class FrequencySet<T extends Serializable<T>> {
+    public elementWrappers: Map<string, FrequencySetElementWrapper<T>> = new Map();
     public totalAppearences: number = 0;
 
     /**
@@ -30,12 +28,13 @@ class FrequencySet<T extends EqComparable<T>> {
      */
     private getWrapperFor(
         element: T, createIfUnexistent: boolean = true
-    ): FrequencySetElementWrapper<T> {
-        let wrapper = this.elementWrappers.filter(
-            wrapper => wrapper.element.equals(element))[0];
-        if (wrapper === undefined && createIfUnexistent) {
+    ): FrequencySetElementWrapper<T> | undefined {
+        let key: string = element.serialize();
+        let wrapper: FrequencySetElementWrapper<T> | undefined =
+            this.elementWrappers.get(key);
+        if (wrapper == undefined && createIfUnexistent) {
             wrapper = new FrequencySetElementWrapper<T>(element);
-            this.elementWrappers.push(wrapper);
+            this.elementWrappers.set(key, wrapper);
         }
         return wrapper;
     }
@@ -51,7 +50,7 @@ class FrequencySet<T extends EqComparable<T>> {
         callback: (wrapper: FrequencySetElementWrapper<T>) => S
     ): S {
         let wrapper = this.getWrapperFor(element);
-        return callback(wrapper);
+        return callback(wrapper!);
     }
 
     /**
@@ -112,13 +111,15 @@ class FrequencySet<T extends EqComparable<T>> {
         // This algorithm should be thoroughly tested.
         if (!this.isEmpty()) {
             let dice: number = Math.random() * this.totalAppearences;
-            let currentPosition: number = 0;
+            let wrappers = this.elementWrappers.values();
+            let currentWrapper: FrequencySetElementWrapper<T>;
             let appearencesCount: number = 0;
-            while (appearencesCount <= dice) {
-                appearencesCount += this.elementWrappers[currentPosition].frequency;
-                currentPosition += 1;
+            do {
+                currentWrapper = wrappers.next().value;
+                appearencesCount += currentWrapper.frequency;
             }
-            return this.elementWrappers[currentPosition - 1];
+            while (appearencesCount < dice);
+            return currentWrapper;
         }
         else {
             throw Error("The set is empty");
@@ -174,7 +175,7 @@ class FrequencySet<T extends EqComparable<T>> {
      * Returns an array with all the (unique) elements of the set.
      */
     getAllElements(): T[] {
-        return this.elementWrappers.map(wrapper => wrapper.element);
+        return Array.from(this.elementWrappers.values()).map(wrapper => wrapper.element);
     }
 
     isEmpty(): boolean {
@@ -187,7 +188,7 @@ class FrequencySet<T extends EqComparable<T>> {
  * Contains the element itself and its frequency, and handles the logic
  * for modifying the frequency of the element.
  */
-class FrequencySetElementWrapper<T extends EqComparable<T>> {
+class FrequencySetElementWrapper<T extends Serializable<T>> {
     element: T;
     frequency: number;
 

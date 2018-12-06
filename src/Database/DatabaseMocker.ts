@@ -1,5 +1,4 @@
-import { Serializable } from "./Database"
-import { FrequencySet, EqComparable } from "../MarkovChain/FrequencySet"
+import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet"
 export { DatabaseMocker, dbMocker }
 
 class DatabaseMocker {
@@ -37,7 +36,7 @@ class DatabaseMocker {
 
 const dbMocker = new DatabaseMocker();
 
-class MockDatabaseQuerier<T extends Serializable<T> & EqComparable<T>> {
+class MockDatabaseQuerier<T extends Serializable<T>> {
     chainId: number;
 
     constructor(chainId: number) {
