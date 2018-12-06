@@ -1,4 +1,3 @@
-// import TelegramBot = require('node-telegram-bot-api');
 import { MarcosBot } from "./MarcosBot"
 import { TextMessage } from "./Messenger"
 export { MarcosBotAction, Actions }
