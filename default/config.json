@@ -1,5 +1,4 @@
 {
-    "token": "Replace this with your Telegram Bot API token here",
     "botConfig": {
         "locales": {
             "WELCOME_MESSAGE": "Hello! I am Marcos the Bot. Talk to me and I will generate random messages based on the things you say.",
