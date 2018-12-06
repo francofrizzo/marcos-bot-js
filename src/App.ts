@@ -1,18 +1,21 @@
-import { MarcosBotApplication, MarcosBotConfiguration } from "./MainApp/MarcosBot"
-import "./MainApp/MarcosBot"
-import { Actions } from "./MainApp/Actions";
-import { exists } from "fs";
+import { MarcosBot, MarcosBotConfiguration } from "./MarcosBot/MarcosBot"
+import { TelegramBotMessenger } from "./MarcosBot/Messenger"
+import { Actions } from "./MarcosBot/Actions";
 export { marcos }
 
-let config : MarcosBotConfiguration;
+// Read configuration file
+// It is assumed that the configuration file is well-formed
+let config : { token: string, botConfig: MarcosBotConfiguration }
 try {
     config = require("../local/config.json");
-} catch (e) {
+}
+catch (e) {
     console.log("Error: The configuration file (local/config.json) could not be found");
     process.exit(1);
 }
-// Note that it assumed that the config file is well-formed
-var marcos = new MarcosBotApplication(config);
+
+let messenger = new TelegramBotMessenger(config!.token);
+var marcos = new MarcosBot(config!.botConfig, messenger);
 console.log("MarcosBot succesfully initialized");
 
 console.log("Registering actions...");

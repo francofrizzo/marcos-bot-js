@@ -1,48 +1,33 @@
-import TelegramBot = require('node-telegram-bot-api');
 import { MarcosBotAction } from './Actions'
+import { Messenger, Message, TextMessage } from './Messenger'
 import { Word, Phraser } from "../MarkovChain/Words"
 import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
-export { MarcosBotApplication, MarcosBotConfiguration }
+export { MarcosBot, MarcosBotConfiguration }
 
 interface MarcosBotConfiguration { // TODO: see how to provide defaults
-    token: string;
     locales: { [ id: string ]: string };
     substitutePeople: boolean;
     listenToAyyLmao: boolean;
     mutationProbability: number
 }
 
-class MarcosBotApplication {
+class MarcosBot {
     private config: MarcosBotConfiguration;
-    private bot: TelegramBot;
+    private messenger: Messenger;
     private actions: MarcosBotAction[] = [];
-    botName: string;
     phraser: Phraser;
 
-    constructor(config: MarcosBotConfiguration) {
+    constructor(config: MarcosBotConfiguration, messenger: Messenger) {
         this.config = config;
-        this.setup();
-    }
-
-    private async setup(): Promise<void> {
-        this.setupPhraser();
-        await this.createBot();
+        this.messenger = messenger;
+        this.phraser = new Phraser(this.getChainProperties());
         this.setupListeners();
     }
 
-    private setupPhraser() {
-        this.phraser = new Phraser(this.getChainProperties());
-    }
-
-    private async createBot(): Promise<void> {
-        this.bot = new TelegramBot(this.config.token, { polling: true });
-        this.botName = (await this.bot.getMe() as TelegramBot.User).username;
-    }
-
     private setupListeners(): void {
-        this.bot.on("text", message => this.handleTextMessage(message));
+        this.messenger.addTextMessageListener(message => this.handleTextMessage(message));
         if (this.config.listenToAyyLmao) {
-            this.bot.on("text", message => this.handleAyyLmao(message));
+            this.messenger.addTextMessageListener(message => this.handleAyyLmao(message));
         }
     }
 
@@ -60,7 +45,7 @@ class MarcosBotApplication {
         }
     }
 
-    handleTextMessage(message: TelegramBot.Message) {
+    private handleTextMessage(message: TextMessage): void {
         const messageText = message.text;
         const commandMatch = /^\/([^\s@]+)(?:@(\S+))?(?:\s(.*))?/.exec(messageText);
         if (commandMatch) {
@@ -68,7 +53,7 @@ class MarcosBotApplication {
             const recipient = commandMatch[2];
             const args = commandMatch[3];
             
-            if (!recipient || recipient == this.botName) {
+            if (!recipient || recipient == this.messenger.botUsername) {
                 const action = this.getAction(command);
                 if (action) {
                     this.executeAction(message, action, args);
@@ -76,7 +61,7 @@ class MarcosBotApplication {
                 // We don't want to generate noise in group chats
                 // answering to unknown commands not directly targeted
                 // at this bot, hence the following condition
-                else if (message.chat.type == "private" || recipient == this.botName) {
+                else if (message.chat.type == "private" || recipient == this.messenger.botUsername) {
                     this.handleUnknownCommand(message, command);
                 }
             }
@@ -87,10 +72,10 @@ class MarcosBotApplication {
     }
 
     executeAction(
-        message: TelegramBot.Message,
+        message: TextMessage,
         action: MarcosBotAction,
         args: string
-    ) {
+    ): void {
         const argRegExp = action.argRegExp || /.*/;
         const argMatch = argRegExp.exec(args);
         if (argMatch) {
@@ -101,15 +86,15 @@ class MarcosBotApplication {
         }
     }
 
-    private handleUnknownCommand(message: TelegramBot.Message, command: string) {
+    private handleUnknownCommand(message: TextMessage, command: string): void {
         this.answer(message, this.$("ERR_UNKNOWN_COMMAND"));
     }
 
-    private handleNonCommandMessage(message: TelegramBot.Message) {
+    private handleNonCommandMessage(message: TextMessage): void {
         this.phraser.storePhrase(message.chat.id, message.text);
     }
 
-    private handleAyyLmao(message: TelegramBot.Message) {
+    private handleAyyLmao(message: TextMessage): void {
         if (/rip/i.exec(message.text)) {
             this.answer(message, "in pieces");
         }
@@ -134,8 +119,8 @@ class MarcosBotApplication {
         }
     }
 
-    answer(message: TelegramBot.Message, response: string) {
-        this.bot.sendMessage(message.chat.id, response);
+    answer(message: Message, response: string) {
+        this.messenger.sendMessage(message.chat.id, response);
     }
 
     $(id: string): string {

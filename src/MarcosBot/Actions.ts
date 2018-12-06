@@ -1,11 +1,12 @@
-import TelegramBot = require('node-telegram-bot-api');
-import { MarcosBotApplication } from "./MarcosBot"
+// import TelegramBot = require('node-telegram-bot-api');
+import { MarcosBot } from "./MarcosBot"
+import { TextMessage } from "./Messenger"
 export { MarcosBotAction, Actions }
 
 type MarcosBotActionHandler = (
-    app?: MarcosBotApplication,
-    message?: TelegramBot.Message,
-    argMatch?: string[]
+    app: MarcosBot,
+    message: TextMessage,
+    argMatch: string[]
 ) => void;
 
 interface MarcosBotAction {
@@ -20,70 +21,70 @@ namespace Actions {
 
     export const start: MarcosBotAction = {
         command: "start",
-        handler: (app, message) => {
-            const response = app.$("WELCOME_MESSAGE")
-            app.answer(message, response);
+        handler: (bot, message) => {
+            const response = bot.$("WELCOME_MESSAGE")
+            bot.answer(message, response);
         }
     };
 
     export const message: MarcosBotAction = {
         command: "message",
-        handler: async (app, message) => {
-            const response = await app.phraser.generatePhrase(
+        handler: async (bot, message) => {
+            const response = await bot.phraser.generatePhrase(
                 message.chat.id);
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     };
 
     export const beginWith: MarcosBotAction = {
         command: "beginwith",
         argRegExp: /(.+)/,
-        handler: async (app, message, argMatch) => {
-            const response = await app.phraser.extendPhrase(
+        handler: async (bot, message, argMatch) => {
+            const response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], false, true)
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     }
 
     export const endWith: MarcosBotAction = {
         command: "endwith",
         argRegExp: /(.+)/,
-        handler: async (app, message, argMatch) => {
-            const response = await app.phraser.extendPhrase(
+        handler: async (bot, message, argMatch) => {
+            const response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], true, false)
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     }
 
     export const use: MarcosBotAction = {
         command: "use",
         argRegExp: /(.+)/,
-        handler: async (app, message, argMatch) => {
-            const response = await app.phraser.extendPhrase(
+        handler: async (bot, message, argMatch) => {
+            const response = await bot.phraser.extendPhrase(
                 message.chat.id, argMatch[1], true, true)
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     }
 
     export const transitionsFrom: MarcosBotAction = {
         command: "transitionsfrom", // TODO: Handle empty chains
         argRegExp: /(\S+)$/,
-        handler: async (app, message, argMatch) => {
-            const transitions = await app.phraser.transitionsFrom(
+        handler: async (bot, message, argMatch) => {
+            const transitions = await bot.phraser.transitionsFrom(
                 message.chat.id, argMatch[1])
             const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     }
 
     export const transitionsTo: MarcosBotAction = {
         command: "transitionsto", // TODO: Handle empty chains
         argRegExp: /(\S+)$/,
-        handler: async (app, message, argMatch) => {
-            const transitions = await app.phraser.transitionsTo(
+        handler: async (bot, message, argMatch) => {
+            const transitions = await bot.phraser.transitionsTo(
                 message.chat.id, argMatch[1])
             const response = transitions.map(t => t[0] + ": " + t[1]).join("\n");
-            app.answer(message, response);
+            bot.answer(message, response);
         }
     }
 
