@@ -10,8 +10,8 @@
     "watch:bot": "nodemon './dist/App.js' --watch './dist'",
     "watch:cli": "nodemon './dist/Cli.js' --watch './dist'",
     "cli": "node './dist/Cli.js'",
-    "start": "npm-run-all clean build --parallel watch:build watch:bot --print-label",
-    "start:cli": "npm-run-all clean build cli"
+    "app": "node './dist/App.js'",
+    "start": "npm-run-all clean build --parallel watch:build watch:bot --print-label"
   },
   "author": "Franco Frizzo",
   "license": "ISC",
