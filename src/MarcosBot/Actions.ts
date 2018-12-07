@@ -39,7 +39,7 @@ namespace Actions {
         command: "beginwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.replacePlaceholdersWithUsernames(
+            let response = await bot.replacePlaceholders(
                 argMatch[1], message.chat.id);
             response = await bot.phraser.extendPhrase(
                 message.chat.id, response, false, true)
@@ -51,7 +51,7 @@ namespace Actions {
         command: "endwith",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.replacePlaceholdersWithUsernames(
+            let response = await bot.replacePlaceholders(
                 argMatch[1], message.chat.id);
             response = await bot.phraser.extendPhrase(
                 message.chat.id, response, true, false)
@@ -63,7 +63,7 @@ namespace Actions {
         command: "use",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            let response = await bot.replacePlaceholdersWithUsernames(
+            let response = await bot.replacePlaceholders(
                 argMatch[1], message.chat.id);
             response = await bot.phraser.extendPhrase(
                 message.chat.id, response, true, true)
@@ -97,9 +97,21 @@ namespace Actions {
         command: "someone",
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
-            const response = await bot.replacePlaceholdersWithUsernames(
+            const response = await bot.replacePlaceholders(
                 argMatch[1], message.chat.id);
             bot.answer(message, response);
+        }
+    }
+
+    export const addSwords: MarcosBotAction = {
+        command: "addwords",
+        argRegExp: /\s*([\w\d-]+)\s*\:(.*\S.*)/,
+        handler: async (bot, message, argMatch) => {
+            const setName = argMatch[1];
+            let swords = argMatch[2].split(",").map(word => word.trim());
+            await bot.addSwords(message.chat.id, setName, swords);
+            const allSwords = await bot.getSwords(message.chat.id, setName)
+            bot.answer(message, setName + ": " + allSwords.join(", "))
         }
     }
 

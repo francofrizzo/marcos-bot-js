@@ -82,7 +82,8 @@ const marcos: MarcosBotApp = {
             Actions.use,
             Actions.transitionsFrom,
             Actions.transitionsTo,
-            Actions.someone
+            Actions.someone,
+            Actions.addSwords
         ].forEach(action =>
             this.bot!.registerAction(action)
         );

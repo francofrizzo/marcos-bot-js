@@ -1,11 +1,11 @@
 import * as sqlite from "sqlite"
 import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet"
 import { User } from "../MarcosBot/Messenger"
-export { DatabaseTransitionQuerier, DatabaseUserQuerier, createDatabaseSchema }
+export { DatabaseTransitionQuerier, DatabaseUserQuerier, DatabaseSwordQuerier, updateDatabaseSchema }
 
 const dbPromise: Promise<sqlite.Database> = sqlite.open("local/marcos.sqlite3");
 
-const createDatabaseSchema = async function() {
+const updateDatabaseSchema = async function() {
     const db: sqlite.Database = await dbPromise;
     db.run(`CREATE TABLE IF NOT EXISTS transitions (
         id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
@@ -24,6 +24,13 @@ const createDatabaseSchema = async function() {
         username     TEXT,
         UNIQUE (userId, chainId)
     )`);
+    db.run(`CREATE TABLE IF NOT EXISTS swords (
+        id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
+        chainId      INTEGER  NOT NULL,
+        setName      TEXT     NOT NULL,
+        word         TEXT     NOT NULL,
+        UNIQUE (chainId, setName, word)
+    )`)
 };
 
 class DatabaseQuerier {
@@ -114,3 +121,50 @@ class DatabaseUserQuerier extends DatabaseQuerier {
         `, queryArgs);
     }
 }
+
+class DatabaseSwordQuerier extends DatabaseQuerier {
+    async getSwords(): Promise<Map<string, string[]>>;
+    async getSwords(setName: string): Promise<string[]>;
+    async getSwords(setName?: string): Promise<any> {
+        const db: sqlite.Database = await dbPromise;
+        if (setName) {
+            let swords: string[] = [];
+            let rows = await db.all(`
+                SELECT word FROM swords
+                    WHERE chainId = $chainId AND setName = $setName
+            `, { $chainId: this.chainId, $setName: setName });
+            rows.forEach(row => swords.push(row.word));
+            return swords;
+        }
+        else {
+            let swords = new Map<string, string[]>();
+            let rows = await db.all(`
+                SELECT setName, word FROM swords
+                    WHERE chainId = $chainId
+            `, { $chainId: this.chainId });
+            rows.forEach(row => {
+                if (swords.has(row.setName)) {
+                    swords.get(row.setName)!.push(row.word);
+                }
+                else {
+                    swords.set(row.setName, [row.word]);
+                }
+            });
+            return swords;
+        }
+    }
+
+    async addSword(setName: string, word: string): Promise<void> {
+        const db: sqlite.Database = await dbPromise;
+        let queryArgs = {
+            $chainId: this.chainId,
+            $setName: setName,
+            $word: word
+        };
+        await db.run(`
+            INSERT OR IGNORE INTO swords(chainId, setName, word)
+                VALUES ($chainId, $setName, $word);
+        `, queryArgs);
+    }
+}
+

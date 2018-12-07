@@ -1,6 +1,6 @@
 import { MarcosBot, MarcosBotConfiguration } from "./MarcosBot/MarcosBot"
 import { CommandLineMessenger } from "./MarcosBot/Messenger"
-import { createDatabaseSchema } from "./Database/Database"
+import { updateDatabaseSchema } from "./Database/Database"
 import { Actions } from "./MarcosBot/Actions";
 export { marcos }
 
@@ -16,7 +16,7 @@ let botConfig : MarcosBotConfiguration = {
         "mutationProbability": 0.2
     };
 
-createDatabaseSchema();
+updateDatabaseSchema();
 let messenger = new CommandLineMessenger(1, "private");
 var marcos = new MarcosBot(botConfig, messenger);
 console.log("Test MarcosBot succesfully initialized");
@@ -30,7 +30,8 @@ console.log("Registering actions...");
     Actions.use,
     Actions.transitionsFrom,
     Actions.transitionsTo,
-    Actions.someone
+    Actions.someone,
+    Actions.addSwords
 ].forEach(action =>
     marcos.registerAction(action)
 );

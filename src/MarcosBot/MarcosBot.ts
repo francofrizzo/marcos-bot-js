@@ -2,7 +2,7 @@ import { MarcosBotAction } from './Actions'
 import { Messenger, User, Message, TextMessage } from './Messenger'
 import { Word, Phraser } from "../MarkovChain/Words"
 import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
-import { DatabaseUserQuerier } from "../Database/Database"
+import { DatabaseUserQuerier, DatabaseSwordQuerier } from "../Database/Database"
 export { MarcosBot, MarcosBotConfiguration }
 
 interface MarcosBotConfiguration { // TODO: see how to provide defaults
@@ -42,8 +42,27 @@ class MarcosBot {
         let querier = new DatabaseUserQuerier(chatId);
         return querier.getUsers();
     }
+    
+    async getSwords(chatId: number): Promise<Map<string, string[]>>;
+    async getSwords(chatId: number, setName: string): Promise<string[]>;
+    async getSwords(chatId: number, setName?: string): Promise<any> {
+        let querier = new DatabaseSwordQuerier(chatId);
+        if (setName) { return querier.getSwords(setName); }
+        else { return querier.getSwords(); }
+    }
+    
+    async addSwords(chatId: number, setName: string, words: string[]) {
+        let querier = new DatabaseSwordQuerier(chatId);
+        words.forEach(word => querier.addSword(setName, word));
+    }
 
-    async replacePlaceholdersWithUsernames(text: string, chatId: number): Promise<string> {
+    async replacePlaceholders(text: string, chatId: number): Promise<string> {
+        let replacedText = await this.replaceUsernamePlaceholders(text, chatId);
+        replacedText = await this.replaceSwordPlaceholders(replacedText, chatId);
+        return replacedText;
+    }
+
+    async replaceUsernamePlaceholders(text: string, chatId: number): Promise<string> {
         const chatUsers = await this.getChatUsers(chatId);
         const randomChatUser: () => string = function() {
             let user = chatUsers[Math.floor(Math.random() * chatUsers.length)];
@@ -51,7 +70,7 @@ class MarcosBot {
             else return [user.first_name, user.last_name].join(" ").trim();
         }
         
-        const placeholderRegex = /^@(\d+)?$/g;
+        const placeholderRegex = /^@(\d+)?$/;
         let replacements: Map<number, string> = new Map();
 
         return text.split(" ").map(word =>
@@ -70,6 +89,23 @@ class MarcosBot {
                     replacement = randomChatUser();
                 }
                 return replacement;
+            })
+        ).join(" ");
+    }
+
+    async replaceSwordPlaceholders(text: string, chatId: number): Promise<string> {
+        let swords = await this.getSwords(chatId);
+        const placeholderRegex = /^\$([\w\d-]+)$/;
+
+        return text.split(" ").map(word =>
+            word.replace(placeholderRegex, (match, setName) => {
+                if (swords.has(setName)) {
+                    let thisSetSwords = swords.get(setName)
+                    return thisSetSwords![Math.floor(Math.random() * thisSetSwords!.length)];
+                }
+                else {
+                    return match;
+                }
             })
         ).join(" ")
     }
