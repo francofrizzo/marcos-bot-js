@@ -5,7 +5,7 @@ import { MarkovChainProperties } from '../MarkovChain/MarkovChain';
 import { DatabaseUserQuerier, DatabaseSwordQuerier } from "../Database/Database"
 export { MarcosBot, MarcosBotConfiguration }
 
-interface MarcosBotConfiguration { // TODO: see how to provide defaults
+interface MarcosBotConfiguration {
     locales: { [ id: string ]: string };
     substitutePeople: boolean;
     listenToAyyLmao: boolean;

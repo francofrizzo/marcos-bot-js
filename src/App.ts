@@ -30,7 +30,7 @@ const marcos: MarcosBotApp = {
     start: async function(): Promise<void> {
         this.config = await this.loadConfiguration();
         this.messenger = new TelegramBotMessenger(this.config.token);
-        this.bot = new MarcosBot(this.config.botConfig, this.messenger)
+        this.bot = new MarcosBot(this.config.botConfig, this.messenger);
         console.log("MarcosBot succesfully initialized");
         this.registerBotActions();
         console.log("MarcosBot is listening...")
