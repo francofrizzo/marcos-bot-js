@@ -1,6 +1,7 @@
 import { MarcosBot, MarcosBotConfiguration } from "./MarcosBot/MarcosBot"
 import { TelegramBotMessenger } from "./MarcosBot/Messenger"
 import { Actions } from "./MarcosBot/Actions";
+import { updateDatabaseSchema } from "./Database/Database"
 import * as fs  from "fs";
 import { prompt } from "enquirer";
 export { marcos }
@@ -90,4 +91,5 @@ const marcos: MarcosBotApp = {
     }
 }
 
+updateDatabaseSchema();
 marcos.start();
