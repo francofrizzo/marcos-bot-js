@@ -77,6 +77,7 @@ const marcos: MarcosBotApp = {
         console.log("Registering actions...");
         [
             Actions.start,
+            Actions.help,
             Actions.message,
             Actions.beginWith,
             Actions.endWith,

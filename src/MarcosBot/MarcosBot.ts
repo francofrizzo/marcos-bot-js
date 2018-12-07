@@ -110,7 +110,15 @@ class MarcosBot {
         ).join(" ")
     }
 
-    private getAction(command: string): MarcosBotAction | undefined {
+    getActions(): Set<MarcosBotAction> {
+        let actions = new Set<MarcosBotAction>();
+        for (let action of this.actions.values()) {
+            actions.add(action);
+        }
+        return actions;
+    }
+
+    getAction(command: string): MarcosBotAction | undefined {
         return this.actions.get(command);
     }
 

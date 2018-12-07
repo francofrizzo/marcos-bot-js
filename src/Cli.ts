@@ -12,6 +12,7 @@ console.log("Test MarcosBot succesfully initialized");
 console.log("Registering actions...");
 [
     Actions.start,
+    Actions.help,
     Actions.message,
     Actions.beginWith,
     Actions.endWith,

@@ -26,6 +26,19 @@ namespace Actions {
         }
     };
 
+    export const help: MarcosBotAction = {
+        command: "help",
+        handler: (bot, message) => {
+            const response = bot.$("AVAILABLE_COMMANDS") + ":\n" +
+                Array.from(bot.getActions()).map(action => 
+                    " - /" +
+                    (Array.isArray(action.command) ? action.command[0] : action.command) +
+                    (action.description ? ": " + action.description : "" )
+                ).join("\n");
+            bot.answer(message, response)
+        }
+    }
+
     export const message: MarcosBotAction = {
         command: "message",
         handler: async (bot, message) => {
