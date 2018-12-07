@@ -110,8 +110,15 @@ namespace Actions {
             const setName = argMatch[1];
             let swords = argMatch[2].split(",").map(word => word.trim());
             await bot.addSwords(message.chat.id, setName, swords);
-            const allSwords = await bot.getSwords(message.chat.id, setName)
-            bot.answer(message, setName + ": " + allSwords.join(", "))
+        }
+    }
+
+    export const seeSwords: MarcosBotAction = {
+        command: ["seewords", "seeWords"],
+        argRegExp: /\s*([\w\d-]+)\s*/,
+        handler: async (bot, message, argMatch) => {
+            const swords = await bot.getSwords(message.chat.id, argMatch[1])
+            bot.answer(message, argMatch[1] + ": " + swords.join(", "))
         }
     }
 

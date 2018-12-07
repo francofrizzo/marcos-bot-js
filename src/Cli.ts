@@ -31,7 +31,8 @@ console.log("Registering actions...");
     Actions.transitionsFrom,
     Actions.transitionsTo,
     Actions.someone,
-    Actions.addSwords
+    Actions.addSwords,
+    Actions.seeSwords
 ].forEach(action =>
     marcos.registerAction(action)
 );

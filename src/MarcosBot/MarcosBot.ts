@@ -51,9 +51,9 @@ class MarcosBot {
         else { return querier.getSwords(); }
     }
     
-    async addSwords(chatId: number, setName: string, words: string[]) {
+    async addSwords(chatId: number, setName: string, words: string[]): Promise<void> {
         let querier = new DatabaseSwordQuerier(chatId);
-        words.forEach(word => querier.addSword(setName, word));
+        await words.forEach(word => querier.addSword(setName, word));
     }
 
     async replacePlaceholders(text: string, chatId: number): Promise<string> {
