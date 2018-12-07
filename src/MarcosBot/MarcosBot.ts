@@ -15,7 +15,7 @@ interface MarcosBotConfiguration { // TODO: see how to provide defaults
 class MarcosBot {
     private config: MarcosBotConfiguration;
     private messenger: Messenger;
-    private actions: MarcosBotAction[] = [];
+    private actions: Map<string, MarcosBotAction> = new Map();
     phraser: Phraser;
 
     constructor(config: MarcosBotConfiguration, messenger: Messenger) {
@@ -110,18 +110,22 @@ class MarcosBot {
         ).join(" ")
     }
 
-    private getAction(command: string): MarcosBotAction {
-        return this.actions.filter(action => action.command == command)[0];
+    private getAction(command: string): MarcosBotAction | undefined {
+        return this.actions.get(command);
     }
 
     registerAction(action: MarcosBotAction) {
-        if (!this.getAction(action.command)) {
-            this.actions.push(action)
-        }
-        else {
-            throw this.$("There already exists an action registered for " +
-                "the command '" + action.command + "'");
-        }
+        let commands =
+            Array.isArray(action.command) ? action.command : [action.command]
+        commands.forEach(command => {
+            if (!this.getAction(command)) {
+                this.actions.set(command, action);
+            }
+            else {
+                throw this.$("There already exists an action registered for " +
+                    "the command '" + command + "'");
+            }
+        });
     }
 
     private handleTextMessage(message: TextMessage): void {

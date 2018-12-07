@@ -9,7 +9,7 @@ type MarcosBotActionHandler = (
 ) => void;
 
 interface MarcosBotAction {
-    command: string;
+    command: string | string[];
     description?: string;
     handler: MarcosBotActionHandler;
     argRegExp?: RegExp;
@@ -36,7 +36,7 @@ namespace Actions {
     };
 
     export const beginWith: MarcosBotAction = {
-        command: "beginwith",
+        command: ["beginwith", "beginWith"],
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
             let response = await bot.replacePlaceholders(
@@ -48,7 +48,7 @@ namespace Actions {
     }
 
     export const endWith: MarcosBotAction = {
-        command: "endwith",
+        command: ["endwith", "endWith"],
         argRegExp: /(.+)/,
         handler: async (bot, message, argMatch) => {
             let response = await bot.replacePlaceholders(
@@ -72,7 +72,7 @@ namespace Actions {
     }
 
     export const transitionsFrom: MarcosBotAction = {
-        command: "transitionsfrom", // TODO: Handle empty chains
+        command: ["transitionsfrom", "transitionsFrom"], // TODO: Handle empty chains
         argRegExp: /(\S+)$/,
         handler: async (bot, message, argMatch) => {
             const transitions = await bot.phraser.transitionsFrom(
@@ -83,7 +83,7 @@ namespace Actions {
     }
 
     export const transitionsTo: MarcosBotAction = {
-        command: "transitionsto", // TODO: Handle empty chains
+        command: ["transitionsto", "transitionsTo"], // TODO: Handle empty chains
         argRegExp: /(\S+)$/,
         handler: async (bot, message, argMatch) => {
             const transitions = await bot.phraser.transitionsTo(
@@ -104,7 +104,7 @@ namespace Actions {
     }
 
     export const addSwords: MarcosBotAction = {
-        command: "addwords",
+        command: ["addwords", "addWords"],
         argRegExp: /\s*([\w\d-]+)\s*\:(.*\S.*)/,
         handler: async (bot, message, argMatch) => {
             const setName = argMatch[1];
