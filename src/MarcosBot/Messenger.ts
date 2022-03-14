@@ -67,11 +67,11 @@ class TelegramBotMessenger implements Messenger {
     }
 
     addMessageListener(handler: TextMessageHandler) {
-        this.bot.on("message", handler);
+        (this.bot.on as any)("message", handler);
     }
     
     addTextMessageListener(handler: TextMessageHandler) {
-        this.bot.on("text", handler);
+        (this.bot.on as any)("text", handler);
     }
 
     async sendMessage(chatId: number, text: string): Promise<void> {

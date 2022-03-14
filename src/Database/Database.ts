@@ -1,9 +1,13 @@
-import * as sqlite from "sqlite"
+import * as sqlite3 from "sqlite3";
+import * as sqlite from "sqlite";
 import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet"
 import { User } from "../MarcosBot/Messenger"
 export { DatabaseTransitionQuerier, DatabaseUserQuerier, DatabaseSwordQuerier, updateDatabaseSchema }
 
-const dbPromise: Promise<sqlite.Database> = sqlite.open("local/marcos.sqlite3");
+const dbPromise: Promise<sqlite.Database> = sqlite.open({
+  filename: "local/marcos.sqlite3",
+  driver: sqlite3.Database,
+});
 
 const updateDatabaseSchema = async function() {
     const db: sqlite.Database = await dbPromise;
