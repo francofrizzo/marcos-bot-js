@@ -119,6 +119,7 @@ type Word = {
 };
 class Verse {
   public words: Word[] = [];
+  private precomputedMetricLength: number | null = null;
 
   constructor(...words: string[]) {
     this.addWords(...words);
@@ -126,9 +127,13 @@ class Verse {
 
   public addWords(...words: string[]) {
     this.words.push(...words.map((word) => Verse.enrichWord(word)));
+    this.precomputedMetricLength = null;
   }
 
   public metricLength(...additionalWords: string[]): number {
+    if (additionalWords.length === 0 && this.precomputedMetricLength !== null) {
+      return this.precomputedMetricLength;
+    }
     let length = 0;
     const words = [
       ...this.words,
@@ -141,7 +146,7 @@ class Verse {
         i > 0 &&
         words[i - 1].endsWithVowel &&
         word.startsWithVowel &&
-        word.accentedSyllabe === word.syllabes.length - 1
+        word.accentedSyllabe !== word.syllabes.length - 1
       ) {
         wordSyllabeCount -= 1;
       }
@@ -149,6 +154,9 @@ class Verse {
         wordSyllabeCount += Math.max(-1, 1 - word.accentedSyllabe);
       }
       length += wordSyllabeCount;
+    }
+    if (additionalWords.length === 0) {
+      this.precomputedMetricLength = length;
     }
     return length;
   }
