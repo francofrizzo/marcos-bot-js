@@ -177,7 +177,10 @@ export class Haiku {
   public verses: Verse[] = [new Verse()];
 
   constructor(initialString = "") {
-    initialString.split(/\s+/).forEach((word) => this.extendWith(word));
+    initialString
+      .trim()
+      .split(" ")
+      .forEach((word) => this.extendWith(word));
   }
 
   canBeExtendedWithWord(word: string): "complete" | "incomplete" | "false" {

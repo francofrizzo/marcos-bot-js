@@ -185,7 +185,9 @@ class Phraser {
         await chain.getRandomWalk(
           new InitialWord(),
           (word) => {
-            haiku.extendWith(word.string);
+            if (!word.isInitial()) {
+              haiku.extendWith(word.string);
+            }
             return haiku.isValid();
           },
           "forwards",
