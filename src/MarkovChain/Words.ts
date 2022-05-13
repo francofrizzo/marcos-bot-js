@@ -187,8 +187,10 @@ class Phraser {
           initialStringWords.length === 0
             ? new InitialWord()
             : new Word(initialStringWords[initialStringWords.length - 1]),
-          (word) => {
-            if (!word.isInitial()) {
+          (word, index) => {
+            if (index > 0) {
+              // The first word in the chain is either the initial marker,
+              // or has already been included in the haiku
               haiku.extendWith(word.string);
             }
             return haiku.isValid();
