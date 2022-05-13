@@ -82,15 +82,23 @@ class MarkovChain<T extends Serializable<T>> {
    */
   private async getRandomWalkNodes(
     startingNode: MarkovChainNode<T>,
-    stoppingCriteria: (node: MarkovChainNode<T>, index?: number) => boolean,
-    advancingFunction: (node: MarkovChainNode<T>) => Promise<MarkovChainNode<T>>
+    stoppingCriteria: (
+      node: MarkovChainNode<T>,
+      index: number,
+      partialWalk: MarkovChainNode<T>[]
+    ) => boolean,
+    advancingFunction: (
+      node: MarkovChainNode<T>,
+      index: number,
+      partialWalk: MarkovChainNode<T>[]
+    ) => Promise<MarkovChainNode<T>>
   ): Promise<MarkovChainNode<T>[]> {
     let walk: MarkovChainNode<T>[] = [];
     let currentNode = startingNode;
     let index = 0;
     walk.push(currentNode);
-    while (!stoppingCriteria(currentNode, index)) {
-      currentNode = await advancingFunction(currentNode);
+    while (!stoppingCriteria(currentNode, index, walk)) {
+      currentNode = await advancingFunction(currentNode, index, walk);
       index++;
       walk.push(currentNode);
     }
@@ -106,21 +114,41 @@ class MarkovChain<T extends Serializable<T>> {
    * immediately after the current state.
    * @param direction The direction in which to walk; it can be 'forwards'
    * or 'backwards'.
+   * @param filteringCriterion An optional predicate that allows, in every step
+   * of the walk, to filter out states. It recieves the state to decide about
+   * as first parameter, and all the accumulated previous states as second
+   * parameter.
    */
   async getRandomWalk(
     startingState: T,
-    stoppingCriteria: (state: T, index?: number) => boolean,
-    direction: "forwards" | "backwards" = "forwards"
+    stoppingCriteria: (state: T, index: number, partialWalk: T[]) => boolean,
+    direction: "forwards" | "backwards" = "forwards",
+    filteringCriterion?: (state: T, index: number, partialWalk: T[]) => boolean
   ): Promise<T[]> {
     let startingNode = this.generateNode(startingState);
-    let advancingFunction =
-      direction == "forwards"
-        ? (node: MarkovChainNode<T>) => node.getRandomNextNode()
-        : (node: MarkovChainNode<T>) => node.getRandomPreviousNode();
     let walkNodes = await this.getRandomWalkNodes(
       startingNode,
-      (node, index) => stoppingCriteria(node.content, index),
-      advancingFunction
+      (node, index, partialWalk) =>
+        stoppingCriteria(
+          node.content,
+          index,
+          partialWalk.map((node) => node.content)
+        ),
+      (node, index, partialWalk) =>
+        node[
+          direction == "forwards"
+            ? "getRandomNextNode"
+            : "getRandomPreviousNode"
+        ](
+          filteringCriterion
+            ? (e) =>
+                filteringCriterion(
+                  e,
+                  index,
+                  partialWalk.map((node) => node.content)
+                )
+            : undefined
+        )
     );
     return walkNodes.map((node) => node.content);
   }
@@ -210,8 +238,13 @@ class MarkovChainNode<T extends Serializable<T>> {
    * Gets a node representing a random state following from the state
    * represented by this node.
    */
-  async getRandomNextNode(): Promise<MarkovChainNode<T>> {
+  async getRandomNextNode(
+    filteringCriterion?: (element: T) => boolean
+  ): Promise<MarkovChainNode<T>> {
     let transitions = await this.getTransitionsFromHere();
+    if (filteringCriterion) {
+      transitions = transitions.filter(filteringCriterion);
+    }
     if (!transitions.isEmpty()) {
       return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
     } else {
@@ -223,8 +256,13 @@ class MarkovChainNode<T extends Serializable<T>> {
    * Gets a node representing a random state preceding the state represented
    * by this node.
    */
-  async getRandomPreviousNode(): Promise<MarkovChainNode<T>> {
+  async getRandomPreviousNode(
+    filteringCriterion?: (element: T) => boolean
+  ): Promise<MarkovChainNode<T>> {
     let transitions = await this.getTransitionsToHere();
+    if (filteringCriterion) {
+      transitions = transitions.filter(filteringCriterion);
+    }
     if (!transitions.isEmpty()) {
       return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
     } else {

@@ -89,6 +89,21 @@ namespace Actions {
     },
   };
 
+  export const haiku: MarcosBotAction = {
+    command: "haiku",
+    handler: async (bot, message) => {
+      let response: string;
+      try {
+        response = (await bot.phraser.generateHaiku(message.chat.id)).join(
+          "\n"
+        );
+      } catch {
+        response = bot.$("ERR_IMPOSSIBLE_HAIKU");
+      }
+      bot.answer(message, response);
+    },
+  };
+
   export const use: MarcosBotAction = {
     command: "use",
     argRegExp: /(.+)/,

@@ -85,6 +85,7 @@ const marcos: MarcosBotApp = {
       Actions.beginWith,
       Actions.endWith,
       Actions.use,
+      Actions.haiku,
       Actions.transitionsFrom,
       Actions.transitionsTo,
       Actions.someone,

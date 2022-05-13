@@ -4,7 +4,8 @@
             "WELCOME_MESSAGE": "Hello! I am Marcos the Bot. Talk to me and I will generate random messages based on the things you say.",
             "AVAILABLE_COMMANDS": "Available commands",
             "ERR_MALFORMED_ARGUMENTS": "The arguments provided are not correct",
-            "ERR_UNKNOWN_COMMAND": "I don't understand that command"
+            "ERR_UNKNOWN_COMMAND": "I don't understand that command",
+            "ERR_IMPOSSIBLE_HAIKU": "I am not feeling inspired for poetry today, sorry :("
         },
         "substitutePeople": true,
         "listenToAyyLmao": true,

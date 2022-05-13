@@ -1,5 +1,6 @@
 import { Serializable } from "./FrequencySet";
 import { MarkovChain, MarkovChainProperties } from "./MarkovChain";
+import { Haiku } from "../Utils/Haiku";
 export { Word, InitialWord, TerminalWord, Phraser };
 
 /**
@@ -124,13 +125,19 @@ class Phraser {
   }
 
   /**
+   * Converts an array of Words objects into a string array.
+   */
+  private static wordsToStringArray(words: Word[]): string[] {
+    return words
+      .filter((word) => !word.isInitial() && !word.isTerminal())
+      .map((word) => word.string);
+  }
+
+  /**
    * Converts an array of Words objects into a string.
    */
   private static wordsToString(words: Word[]): string {
-    return words
-      .filter((word) => !word.isInitial() && !word.isTerminal())
-      .map((word) => word.string)
-      .join(" ");
+    return this.wordsToStringArray(words).join(" ");
   }
 
   /**
@@ -153,6 +160,46 @@ class Phraser {
     return Phraser.wordsToString(
       await chain.getRandomWalk(new InitialWord(), (word) => word.isTerminal())
     );
+  }
+
+  /**
+   * Generates a random phrase using the Markov chain whose identifier
+   * is passed as a parameter.
+   *
+   * Note: the algorithms used to split words in syllabes and for rhymes are
+   * tuned for the Spanish language.
+   *
+   * @param chainId The identifier of the Markov chain to be used.
+   * @param maxTries How many times to try building a haiku before giving up.
+   */
+  async generateHaiku(chainId: number, maxTries = 20): Promise<string[]> {
+    let chain = new MarkovChain<Word>(chainId, this.chainProperties);
+    for (let timesTried = 0; timesTried < maxTries; timesTried += 1) {
+      try {
+        const haiku = new Haiku();
+        const finalPoem = Phraser.wordsToStringArray(
+          await chain.getRandomWalk(
+            new InitialWord(),
+            (word) => {
+              haiku.extendWith(word.string);
+              return haiku.isValid();
+            },
+            "forwards",
+            (word) => {
+              if (word.isTerminal()) {
+                return false;
+              } else {
+                return haiku.canBeExtendedWithWord(word.string);
+              }
+            }
+          )
+        );
+        return haiku.toStrings();
+      } catch (err) {
+        // we just go on trying
+      }
+    }
+    throw Error("Unable to build a haiku for this chain");
   }
 
   /**
