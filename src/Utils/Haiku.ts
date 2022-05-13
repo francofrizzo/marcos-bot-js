@@ -180,6 +180,7 @@ export class Haiku {
     initialString
       .trim()
       .split(" ")
+      .filter((word) => word !== "")
       .forEach((word) => this.extendWith(word));
   }
 
