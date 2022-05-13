@@ -179,10 +179,13 @@ class Phraser {
     maxTries = 20
   ): Promise<string[]> {
     let chain = new MarkovChain<Word>(chainId, this.chainProperties);
-    const initialStringWords = initialString.trim().split(" ");
+    const initialStringWords = initialString
+      .trim()
+      .split(" ")
+      .filter((word) => word !== "");
     for (let timesTried = 0; timesTried < maxTries; timesTried += 1) {
       try {
-        const haiku = new Haiku(initialString);
+        const haiku = new Haiku(...initialStringWords);
         await chain.getRandomWalk(
           initialStringWords.length === 0
             ? new InitialWord()

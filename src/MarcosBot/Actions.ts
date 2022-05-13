@@ -97,8 +97,7 @@ namespace Actions {
         response = (
           await bot.phraser.generateHaiku(message.chat.id, argMatch[0])
         ).join("\n");
-      } catch (err) {
-        console.log(err);
+      } catch {
         response = bot.$("ERR_IMPOSSIBLE_HAIKU");
       }
       bot.answer(message, response);
