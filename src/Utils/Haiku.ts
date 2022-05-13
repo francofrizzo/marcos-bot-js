@@ -176,6 +176,10 @@ export class Haiku {
   private static expectedStructure = [5, 7, 5];
   public verses: Verse[] = [new Verse()];
 
+  constructor(initialString = "") {
+    initialString.split(/\s+/).forEach((word) => this.extendWith(word));
+  }
+
   canBeExtendedWithWord(word: string): "complete" | "incomplete" | "false" {
     try {
       if (

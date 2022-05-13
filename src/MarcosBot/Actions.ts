@@ -91,13 +91,14 @@ namespace Actions {
 
   export const haiku: MarcosBotAction = {
     command: "haiku",
-    handler: async (bot, message) => {
+    handler: async (bot, message, argMatch) => {
       let response: string;
       try {
-        response = (await bot.phraser.generateHaiku(message.chat.id)).join(
-          "\n"
-        );
-      } catch {
+        response = (
+          await bot.phraser.generateHaiku(message.chat.id, argMatch[0])
+        ).join("\n");
+      } catch (err) {
+        console.log(err);
         response = bot.$("ERR_IMPOSSIBLE_HAIKU");
       }
       bot.answer(message, response);

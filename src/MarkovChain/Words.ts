@@ -171,35 +171,38 @@ class Phraser {
    *
    * @param chainId The identifier of the Markov chain to be used.
    * @param maxTries How many times to try building a haiku before giving up.
+   * @param initialString A initial string from which to generate the haiku.
    */
-  async generateHaiku(chainId: number, maxTries = 20): Promise<string[]> {
+  async generateHaiku(
+    chainId: number,
+    initialString = "",
+    maxTries = 20
+  ): Promise<string[]> {
     let chain = new MarkovChain<Word>(chainId, this.chainProperties);
     for (let timesTried = 0; timesTried < maxTries; timesTried += 1) {
       try {
-        const haiku = new Haiku();
-        const finalPoem = Phraser.wordsToStringArray(
-          await chain.getRandomWalk(
-            new InitialWord(),
-            (word) => {
-              haiku.extendWith(word.string);
-              return haiku.isValid();
-            },
-            "forwards",
-            async (word) => {
-              if (word.isTerminal()) {
-                return false;
-              } else {
-                const canBeExtended = haiku.canBeExtendedWithWord(word.string);
-                return (
-                  canBeExtended === "incomplete" ||
-                  (canBeExtended === "complete" &&
-                    (await chain.transitionsFrom(word)).some(([word]) =>
-                      word.isTerminal()
-                    ))
-                );
-              }
+        const haiku = new Haiku(initialString);
+        await chain.getRandomWalk(
+          new InitialWord(),
+          (word) => {
+            haiku.extendWith(word.string);
+            return haiku.isValid();
+          },
+          "forwards",
+          async (word) => {
+            if (word.isTerminal()) {
+              return false;
+            } else {
+              const canBeExtended = haiku.canBeExtendedWithWord(word.string);
+              return (
+                canBeExtended === "incomplete" ||
+                (canBeExtended === "complete" &&
+                  (await chain.transitionsFrom(word)).some(([word]) =>
+                    word.isTerminal()
+                  ))
+              );
             }
-          )
+          }
         );
         return haiku.toStrings();
       } catch (err) {
