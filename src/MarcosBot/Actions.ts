@@ -130,7 +130,10 @@ namespace Actions {
         message.chat.id,
         argMatch[1]
       );
-      const response = transitions.map((t) => t[0] + ": " + t[1]).join("\n");
+      const response = transitions
+        .sort((t1, t2) => t2[1] - t1[1])
+        .map((t) => t[0] + ": " + t[1])
+        .join("\n");
       bot.answer(message, response);
     },
   };
@@ -143,7 +146,10 @@ namespace Actions {
         message.chat.id,
         argMatch[1]
       );
-      const response = transitions.map((t) => t[0] + ": " + t[1]).join("\n");
+      const response = transitions
+        .sort((t1, t2) => t2[1] - t1[1])
+        .map((t) => t[0] + ": " + t[1])
+        .join("\n");
       bot.answer(message, response);
     },
   };
