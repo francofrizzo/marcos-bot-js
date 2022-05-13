@@ -102,12 +102,9 @@ const syllabeSplit = (word: string) => {
 const findAccentedSyllabe = (word: string, syllabes: string[]): number => {
   let accentedSyllabe = syllabes.findIndex((s) => A_VOWEL.test(s));
   if (accentedSyllabe < 0) {
-    accentedSyllabe = Math.max(
-      0,
-      NSVOWEL.test(word[word.length])
-        ? syllabes.length - 2
-        : syllabes.length - 1
-    );
+    accentedSyllabe = NSVOWEL.test(word[word.length])
+      ? syllabes.length - 2
+      : syllabes.length - 1;
   }
   accentedSyllabe = syllabes.length - accentedSyllabe - 1;
   return accentedSyllabe;
@@ -143,8 +140,8 @@ class Verse {
       if (
         i > 0 &&
         words[i - 1].endsWithVowel &&
-        words[i - 1].accentedSyllabe > 0 &&
-        word.startsWithVowel
+        word.startsWithVowel &&
+        word.accentedSyllabe === word.syllabes.length - 1
       ) {
         wordSyllabeCount -= 1;
       }
