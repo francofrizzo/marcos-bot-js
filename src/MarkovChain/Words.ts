@@ -185,11 +185,18 @@ class Phraser {
               return haiku.isValid();
             },
             "forwards",
-            (word) => {
+            async (word) => {
               if (word.isTerminal()) {
                 return false;
               } else {
-                return haiku.canBeExtendedWithWord(word.string);
+                const canBeExtended = haiku.canBeExtendedWithWord(word.string);
+                return (
+                  canBeExtended === "incomplete" ||
+                  (canBeExtended === "complete" &&
+                    (await chain.transitionsFrom(word)).some(([word]) =>
+                      word.isTerminal()
+                    ))
+                );
               }
             }
           )

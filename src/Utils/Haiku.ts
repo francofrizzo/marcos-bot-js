@@ -176,28 +176,61 @@ export class Haiku {
   private static expectedStructure = [5, 7, 5];
   public verses: Verse[] = [new Verse()];
 
-  canBeExtendedWithWord(word: string) {
+  canBeExtendedWithWord(word: string): "complete" | "incomplete" | "false" {
     try {
       if (
         this.verses[this.verses.length - 1].metricLength() <
         Haiku.expectedStructure[this.verses.length - 1]
       ) {
-        return (
-          this.verses[this.verses.length - 1].metricLength(word) <=
-          Haiku.expectedStructure[this.verses.length - 1]
-        );
-      } else {
-        if (this.verses.length < Haiku.expectedStructure.length) {
-          return (
-            new Verse(word).metricLength() <
-            Haiku.expectedStructure[this.verses.length]
-          );
+        // There is still room in the current verse
+        const verseLengthWithNewWord =
+          this.verses[this.verses.length - 1].metricLength(word);
+        const expectedVerseLength =
+          Haiku.expectedStructure[this.verses.length - 1];
+        if (
+          this.verses.length === Haiku.expectedStructure.length &&
+          verseLengthWithNewWord === expectedVerseLength
+        ) {
+          // The new word completes the last verse
+          return "complete";
+        } else if (verseLengthWithNewWord <= expectedVerseLength) {
+          // The new word fits in the verse and there is extra space,
+          // or the verse is not the last one
+          return "incomplete";
         } else {
-          return false;
+          // The new word is too long for fitting the next verse
+          return "false";
+        }
+      } else {
+        // We need to add a new verse
+        if (this.verses.length < Haiku.expectedStructure.length) {
+          // We still can add verses
+          const newWordLength = new Verse(word).metricLength();
+          const expectedVerseLength =
+            Haiku.expectedStructure[this.verses.length];
+          if (
+            this.verses.length === Haiku.expectedStructure.length - 1 &&
+            newWordLength === expectedVerseLength
+          ) {
+            // The new word completes the last verse
+            return "complete";
+          } else if (newWordLength <= expectedVerseLength) {
+            // The new word fits in the next verse and there is extra space,
+            // or the verse is not the last one
+            return "incomplete";
+          } else {
+            // The new word is too long for fitting the next verse
+            return "false";
+          }
+        } else {
+          // There are no room for more verses
+          return "false";
         }
       }
     } catch {
-      return false;
+      // There was a problem trying to add the word (probably, splitting it
+      // into syllabes)
+      return "false";
     }
   }
 

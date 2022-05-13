@@ -90,10 +90,12 @@ class FrequencySet<T extends Serializable<T>> {
    * Executes a function for every wrapper in the set.
    * @param callback A function to be called with each wrapper.
    */
-  private forEach(callback: (wrapper: FrequencySetElementWrapper<T>) => void) {
+  private async forEach(
+    callback: (wrapper: FrequencySetElementWrapper<T>) => PromiseLike<void>
+  ) {
     let wrappers = this.elementWrappers.values();
     for (let wrapper of wrappers) {
-      callback(wrapper);
+      await callback(wrapper);
     }
   }
 
@@ -192,10 +194,12 @@ class FrequencySet<T extends Serializable<T>> {
    * Returns a new frenquency set preserving only those elements that match
    * the filtering criterion.
    */
-  filter(filteringCriterion: (element: T) => boolean): FrequencySet<T> {
+  async filter(
+    filteringCriterion: (element: T) => boolean | PromiseLike<boolean>
+  ): Promise<FrequencySet<T>> {
     const newSet = new FrequencySet<T>();
-    this.forEach((wrapper) => {
-      if (filteringCriterion(wrapper.element)) {
+    await this.forEach(async (wrapper) => {
+      if (await filteringCriterion(wrapper.element)) {
         newSet.addAppearences(wrapper.element, wrapper.frequency);
       }
     });

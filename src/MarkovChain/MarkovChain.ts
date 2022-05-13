@@ -86,18 +86,18 @@ class MarkovChain<T extends Serializable<T>> {
       node: MarkovChainNode<T>,
       index: number,
       partialWalk: MarkovChainNode<T>[]
-    ) => boolean,
+    ) => boolean | PromiseLike<boolean>,
     advancingFunction: (
       node: MarkovChainNode<T>,
       index: number,
       partialWalk: MarkovChainNode<T>[]
-    ) => Promise<MarkovChainNode<T>>
+    ) => PromiseLike<MarkovChainNode<T>>
   ): Promise<MarkovChainNode<T>[]> {
     let walk: MarkovChainNode<T>[] = [];
     let currentNode = startingNode;
     let index = 0;
     walk.push(currentNode);
-    while (!stoppingCriteria(currentNode, index, walk)) {
+    while (!(await stoppingCriteria(currentNode, index, walk))) {
       currentNode = await advancingFunction(currentNode, index, walk);
       index++;
       walk.push(currentNode);
@@ -121,20 +121,28 @@ class MarkovChain<T extends Serializable<T>> {
    */
   async getRandomWalk(
     startingState: T,
-    stoppingCriteria: (state: T, index: number, partialWalk: T[]) => boolean,
+    stoppingCriteria: (
+      state: T,
+      index: number,
+      partialWalk: T[]
+    ) => boolean | PromiseLike<boolean>,
     direction: "forwards" | "backwards" = "forwards",
-    filteringCriterion?: (state: T, index: number, partialWalk: T[]) => boolean
+    filteringCriterion?: (
+      state: T,
+      index: number,
+      partialWalk: T[]
+    ) => boolean | PromiseLike<boolean>
   ): Promise<T[]> {
     let startingNode = this.generateNode(startingState);
     let walkNodes = await this.getRandomWalkNodes(
       startingNode,
-      (node, index, partialWalk) =>
-        stoppingCriteria(
+      async (node, index, partialWalk) =>
+        await stoppingCriteria(
           node.content,
           index,
           partialWalk.map((node) => node.content)
         ),
-      (node, index, partialWalk) =>
+      async (node, index, partialWalk) =>
         node[
           direction == "forwards"
             ? "getRandomNextNode"
@@ -239,11 +247,11 @@ class MarkovChainNode<T extends Serializable<T>> {
    * represented by this node.
    */
   async getRandomNextNode(
-    filteringCriterion?: (element: T) => boolean
+    filteringCriterion?: (element: T) => boolean | PromiseLike<boolean>
   ): Promise<MarkovChainNode<T>> {
     let transitions = await this.getTransitionsFromHere();
     if (filteringCriterion) {
-      transitions = transitions.filter(filteringCriterion);
+      transitions = await transitions.filter(filteringCriterion);
     }
     if (!transitions.isEmpty()) {
       return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
@@ -257,11 +265,11 @@ class MarkovChainNode<T extends Serializable<T>> {
    * by this node.
    */
   async getRandomPreviousNode(
-    filteringCriterion?: (element: T) => boolean
+    filteringCriterion?: (element: T) => boolean | PromiseLike<boolean>
   ): Promise<MarkovChainNode<T>> {
     let transitions = await this.getTransitionsToHere();
     if (filteringCriterion) {
-      transitions = transitions.filter(filteringCriterion);
+      transitions = await transitions.filter(filteringCriterion);
     }
     if (!transitions.isEmpty()) {
       return new MarkovChainNode<T>(transitions.getRandomElement(), this.chain);
