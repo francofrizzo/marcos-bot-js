@@ -1,15 +1,14 @@
-import { MarcosBot, MarcosBotConfiguration } from "./MarcosBot/MarcosBot";
-import { CommandLineMessenger } from "./MarcosBot/Messenger";
+import { ConfigurationLoader } from "./Config/Config";
 import { updateDatabaseSchema } from "./Database/Database";
 import { Actions } from "./MarcosBot/Actions";
+import { MarcosBot } from "./MarcosBot/MarcosBot";
+import { CommandLineMessenger } from "./MarcosBot/Messenger";
 export { marcos };
 
 updateDatabaseSchema();
 let messenger = new CommandLineMessenger(1, "private");
-var marcos = new MarcosBot(
-  require("../default/config.json").botConfig,
-  messenger
-);
+const config = ConfigurationLoader.loadConfiguration();
+var marcos = new MarcosBot(config.botConfig, messenger);
 console.log("Test MarcosBot succesfully initialized");
 
 console.log("Registering actions...");

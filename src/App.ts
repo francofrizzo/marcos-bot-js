@@ -1,12 +1,10 @@
-import { MarcosBot, MarcosBotConfiguration } from "./MarcosBot/MarcosBot";
-import { TelegramBotMessenger } from "./MarcosBot/Messenger";
-import { Actions } from "./MarcosBot/Actions";
-import { updateDatabaseSchema } from "./Database/Database";
-import * as fs from "fs";
 import { prompt } from "enquirer";
+import { AppConfiguration, ConfigurationLoader } from "./Config/Config";
+import { updateDatabaseSchema } from "./Database/Database";
+import { Actions } from "./MarcosBot/Actions";
+import { MarcosBot } from "./MarcosBot/MarcosBot";
+import { TelegramBotMessenger } from "./MarcosBot/Messenger";
 export { marcos };
-
-type AppConfiguration = { token: string; botConfig: MarcosBotConfiguration };
 
 interface MarcosBotApp {
   config: AppConfiguration | undefined;
@@ -16,7 +14,6 @@ interface MarcosBotApp {
   start: () => Promise<void>;
 
   loadConfiguration: () => Promise<AppConfiguration>;
-  validateConfiguration: (config: any) => Promise<AppConfiguration>;
   askToken: () => Promise<string>;
 
   registerBotActions: () => void;
@@ -37,34 +34,25 @@ const marcos: MarcosBotApp = {
   },
 
   loadConfiguration: async function (): Promise<AppConfiguration> {
-    let defaultConfig = require("../default/config.json");
-
-    let localConfig = {};
     try {
-      localConfig = require("../local/config.json");
-    } catch {
-      console.log("No local config file provided. Using default settings");
-    }
-    localConfig = await this.validateConfiguration(localConfig);
-    fs.writeFile(
-      __dirname + "/../local/config.json",
-      JSON.stringify(localConfig, undefined, 4),
-      (err) => {
-        if (err) console.log(err);
+      // Try to load configuration from environment variables
+      return ConfigurationLoader.loadConfiguration();
+    } catch (error) {
+      // If token is missing from environment, prompt for it
+      if ((error as Error).message.includes("TELEGRAM_BOT_TOKEN")) {
+        console.log(
+          "TELEGRAM_BOT_TOKEN not found in environment variables. Please provide it manually."
+        );
+        const token = await this.askToken();
+
+        // Set the token in process.env so ConfigurationLoader can use it
+        process.env.TELEGRAM_BOT_TOKEN = token;
+
+        // Try loading configuration again
+        return ConfigurationLoader.loadConfiguration();
       }
-    );
-
-    let config = Object.assign(defaultConfig, localConfig);
-    return config;
-  },
-
-  validateConfiguration: async function (
-    config: any
-  ): Promise<AppConfiguration> {
-    if (!config.token) {
-      config.token = await this.askToken();
+      throw error;
     }
-    return config;
   },
 
   askToken: async function (): Promise<string> {

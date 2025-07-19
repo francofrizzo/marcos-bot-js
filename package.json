@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node-telegram-bot-api": "^0.30.1",
+    "dotenv": "^16.6.1",
     "enquirer": "^2.1.1",
     "node-telegram-bot-api": "^0.30.0",
     "nodemon": "^1.18.7",
