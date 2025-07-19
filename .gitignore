@@ -7,7 +7,6 @@ scripts
 
 # Node.js files
 node_modules
-package-lock.json
 npm-debug.log
 
 # IDE files
