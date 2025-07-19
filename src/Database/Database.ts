@@ -1,45 +1,70 @@
-import * as sqlite3 from "sqlite3";
-import * as sqlite from "sqlite";
-import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet";
+import "reflect-metadata";
+import { DataSource, DataSourceOptions, Repository } from "typeorm";
+import { DatabaseConfiguration } from "../Config/Config";
 import { User } from "../MarcosBot/Messenger";
+import { FrequencySet, Serializable } from "../MarkovChain/FrequencySet";
+import { Sword, Transition, UserEntity } from "./entities";
+
 export {
+  DatabaseSwordQuerier,
   DatabaseTransitionQuerier,
   DatabaseUserQuerier,
-  DatabaseSwordQuerier,
+  initializeDatabase,
   updateDatabaseSchema,
 };
 
-const dbPromise: Promise<sqlite.Database> = sqlite.open({
-  filename: "local/marcos.sqlite3",
-  driver: sqlite3.Database,
-});
+let dataSource: DataSource | null = null;
 
-const updateDatabaseSchema = async function () {
-  const db: sqlite.Database = await dbPromise;
-  db.run(`CREATE TABLE IF NOT EXISTS transitions (
-        id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
-        chainId      INTEGER  NOT NULL,
-        fromState    TEXT     NOT NULL,
-        toState      TEXT     NOT NULL,
-        frequency    INTEGER  NOT NULL,
-        UNIQUE (chainid, fromState, toState)
-    )`);
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-        id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
-        userId       INTEGER  NOT NULL,
-        chainId      INTEGER  NOT NULL,
-        firstName    TEXT,
-        lastName     TEXT,
-        username     TEXT,
-        UNIQUE (userId, chainId)
-    )`);
-  db.run(`CREATE TABLE IF NOT EXISTS swords (
-        id           INTEGER  PRIMARY KEY  AUTOINCREMENT,
-        chainId      INTEGER  NOT NULL,
-        setName      TEXT     NOT NULL,
-        word         TEXT     NOT NULL,
-        UNIQUE (chainId, setName, word)
-    )`);
+const createDataSourceOptions = (
+  config: DatabaseConfiguration
+): DataSourceOptions => {
+  const baseOptions = {
+    synchronize: config.synchronize || false,
+    logging: config.logging || false,
+    entities: [Transition, UserEntity, Sword],
+    migrations: [],
+    subscribers: [],
+  };
+
+  if (config.type === "sqlite") {
+    // For SQLite, extract the file path from the URL
+    const dbPath = config.url.replace(/^sqlite:\/\//, "");
+    return {
+      type: "sqlite",
+      database: dbPath,
+      ...baseOptions,
+    };
+  } else {
+    // For other database types, use the URL
+    return {
+      type: config.type,
+      url: config.url,
+      ...baseOptions,
+    };
+  }
+};
+
+const initializeDatabase = async function (
+  config: DatabaseConfiguration
+): Promise<void> {
+  if (dataSource?.isInitialized) {
+    return;
+  }
+
+  const dataSourceOptions = createDataSourceOptions(config);
+  dataSource = new DataSource(dataSourceOptions);
+
+  await dataSource.initialize();
+};
+
+const updateDatabaseSchema = async function (): Promise<void> {
+  if (!dataSource?.isInitialized) {
+    throw new Error("Database not initialized. Call initializeDatabase first.");
+  }
+
+  // TypeORM will handle schema updates automatically if synchronize is enabled
+  // For production, you might want to use migrations instead
+  await dataSource.synchronize();
 };
 
 class DatabaseQuerier {
@@ -48,138 +73,162 @@ class DatabaseQuerier {
   constructor(chainId: number) {
     this.chainId = chainId;
   }
+
+  protected getDataSource(): DataSource {
+    if (!dataSource?.isInitialized) {
+      throw new Error(
+        "Database not initialized. Call initializeDatabase first."
+      );
+    }
+    return dataSource;
+  }
 }
 
 class DatabaseTransitionQuerier<
   T extends Serializable<T>
 > extends DatabaseQuerier {
+  private get repository(): Repository<Transition> {
+    return this.getDataSource().getRepository(Transition);
+  }
+
   async addTransition(fromState: T, toState: T): Promise<void> {
-    const db: sqlite.Database = await dbPromise;
-    let queryArgs = {
-      $chainId: this.chainId,
-      $fromState: fromState.serialize(),
-      $toState: toState.serialize(),
-    };
-    await db.run(
-      `
-            INSERT OR IGNORE INTO transitions(chainId, fromState, toState, frequency)
-                VALUES ($chainId, $fromState, $toState, 0);
-        `,
-      queryArgs
-    );
-    await db.run(
-      `
-            UPDATE transitions
-                SET frequency = frequency + 1
-                WHERE chainId = $chainId AND fromState = $fromState AND toState = $toState
-        `,
-      queryArgs
-    );
+    const fromStateSerialized = fromState.serialize();
+    const toStateSerialized = toState.serialize();
+
+    // Try to find existing transition
+    const existingTransition = await this.repository.findOne({
+      where: {
+        chainId: this.chainId,
+        fromState: fromStateSerialized,
+        toState: toStateSerialized,
+      },
+    });
+
+    if (existingTransition) {
+      // Update frequency
+      existingTransition.frequency += 1;
+      await this.repository.save(existingTransition);
+    } else {
+      // Create new transition
+      const newTransition = this.repository.create({
+        chainId: this.chainId,
+        fromState: fromStateSerialized,
+        toState: toStateSerialized,
+        frequency: 1,
+      });
+      await this.repository.save(newTransition);
+    }
   }
 
   async getTransitionsFrom(state: T): Promise<FrequencySet<T>> {
-    const db: sqlite.Database = await dbPromise;
-    let transitions = new FrequencySet<T>();
-    let rows = await db.all(
-      `
-        SELECT toState, frequency FROM transitions
-        WHERE chainId = $chainId AND fromState = $fromState
-        `,
-      { $chainId: this.chainId, $fromState: state.serialize() }
-    );
-    rows.forEach((row) => {
+    const transitions = new FrequencySet<T>();
+    const results = await this.repository.find({
+      where: {
+        chainId: this.chainId,
+        fromState: state.serialize(),
+      },
+    });
+
+    results.forEach((row) => {
       transitions.addAppearences(state.deserialize(row.toState), row.frequency);
     });
+
     return transitions;
   }
 
   async getTransitionsTo(state: T): Promise<FrequencySet<T>> {
-    const db: sqlite.Database = await dbPromise;
-    let transitions = new FrequencySet<T>();
-    let rows = await db.all(
-      `
-            SELECT fromState, frequency FROM transitions
-                WHERE chainId = $chainId AND toState = $toState
-        `,
-      { $chainId: this.chainId, $toState: state.serialize() }
-    );
-    rows.forEach((row) => {
+    const transitions = new FrequencySet<T>();
+    const results = await this.repository.find({
+      where: {
+        chainId: this.chainId,
+        toState: state.serialize(),
+      },
+    });
+
+    results.forEach((row) => {
       transitions.addAppearences(
         state.deserialize(row.fromState),
         row.frequency
       );
     });
+
     return transitions;
   }
 }
 
 class DatabaseUserQuerier extends DatabaseQuerier {
+  private get repository(): Repository<UserEntity> {
+    return this.getDataSource().getRepository(UserEntity);
+  }
+
   async getUsers(): Promise<User[]> {
-    const db: sqlite.Database = await dbPromise;
-    let users: User[] = [];
-    let rows = await db.all(
-      `
-            SELECT userId, firstName, lastName, username FROM users
-                WHERE chainId = $chainId
-        `,
-      { $chainId: this.chainId }
-    );
-    rows.forEach((row) => {
+    const users: User[] = [];
+    const results = await this.repository.find({
+      where: {
+        chainId: this.chainId,
+      },
+    });
+
+    results.forEach((row) => {
       users.push({
         id: row.userId,
-        first_name: row.firstName,
-        last_name: row.lastName,
-        username: row.username,
+        first_name: row.firstName || "",
+        last_name: row.lastName || undefined,
+        username: row.username || undefined,
       });
     });
+
     return users;
   }
 
   async addUser(user: User): Promise<void> {
-    const db: sqlite.Database = await dbPromise;
-    let queryArgs = {
-      $userId: user.id,
-      $chainId: this.chainId,
-      $firstName: user.first_name,
-      $lastName: user.last_name,
-      $username: user.username,
-    };
-    await db.run(
-      `
-            INSERT OR IGNORE INTO users(userId, chainId, firstName, lastName, username)
-                VALUES ($userId, $chainId, $firstName, $lastName, $username);
-        `,
-      queryArgs
-    );
+    // Try to find existing user
+    const existingUser = await this.repository.findOne({
+      where: {
+        userId: user.id,
+        chainId: this.chainId,
+      },
+    });
+
+    if (!existingUser) {
+      const newUser = this.repository.create({
+        userId: user.id,
+        chainId: this.chainId,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        username: user.username,
+      });
+      await this.repository.save(newUser);
+    }
   }
 }
 
 class DatabaseSwordQuerier extends DatabaseQuerier {
+  private get repository(): Repository<Sword> {
+    return this.getDataSource().getRepository(Sword);
+  }
+
   async getSwords(): Promise<Map<string, string[]>>;
   async getSwords(setName: string): Promise<string[]>;
   async getSwords(setName?: string): Promise<any> {
-    const db: sqlite.Database = await dbPromise;
     if (setName) {
-      let swords: string[] = [];
-      let rows = await db.all(
-        `
-                SELECT word FROM swords
-                    WHERE chainId = $chainId AND setName = $setName
-            `,
-        { $chainId: this.chainId, $setName: setName }
-      );
-      rows.forEach((row) => swords.push(row.word));
+      const swords: string[] = [];
+      const results = await this.repository.find({
+        where: {
+          chainId: this.chainId,
+          setName: setName,
+        },
+      });
+      results.forEach((row) => swords.push(row.word));
       return swords;
     } else {
-      let swords = new Map<string, string[]>();
-      let rows = await db.all(
-        `
-                SELECT setName, word FROM swords
-                    WHERE chainId = $chainId
-            `,
-        { $chainId: this.chainId }
-      );
-      rows.forEach((row) => {
+      const swords = new Map<string, string[]>();
+      const results = await this.repository.find({
+        where: {
+          chainId: this.chainId,
+        },
+      });
+      results.forEach((row) => {
         if (swords.has(row.setName)) {
           swords.get(row.setName)!.push(row.word);
         } else {
@@ -191,18 +240,22 @@ class DatabaseSwordQuerier extends DatabaseQuerier {
   }
 
   async addSword(setName: string, word: string): Promise<void> {
-    const db: sqlite.Database = await dbPromise;
-    let queryArgs = {
-      $chainId: this.chainId,
-      $setName: setName,
-      $word: word,
-    };
-    await db.run(
-      `
-            INSERT OR IGNORE INTO swords(chainId, setName, word)
-                VALUES ($chainId, $setName, $word);
-        `,
-      queryArgs
-    );
+    // Try to find existing sword
+    const existingSword = await this.repository.findOne({
+      where: {
+        chainId: this.chainId,
+        setName: setName,
+        word: word,
+      },
+    });
+
+    if (!existingSword) {
+      const newSword = this.repository.create({
+        chainId: this.chainId,
+        setName: setName,
+        word: word,
+      });
+      await this.repository.save(newSword);
+    }
   }
 }

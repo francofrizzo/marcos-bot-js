@@ -1,6 +1,6 @@
 import { prompt } from "enquirer";
 import { AppConfiguration, ConfigurationLoader } from "./Config/Config";
-import { updateDatabaseSchema } from "./Database/Database";
+import { initializeDatabase, updateDatabaseSchema } from "./Database/Database";
 import { Actions } from "./MarcosBot/Actions";
 import { MarcosBot } from "./MarcosBot/MarcosBot";
 import { TelegramBotMessenger } from "./MarcosBot/Messenger";
@@ -26,6 +26,13 @@ const marcos: MarcosBotApp = {
 
   start: async function (): Promise<void> {
     this.config = await this.loadConfiguration();
+
+    // Initialize database with configuration
+    console.log("Initializing database...");
+    await initializeDatabase(this.config.database);
+    await updateDatabaseSchema();
+    console.log("Database initialized successfully");
+
     this.messenger = new TelegramBotMessenger(this.config.token);
     this.bot = new MarcosBot(this.config.botConfig, this.messenger);
     console.log("MarcosBot succesfully initialized");
@@ -83,5 +90,4 @@ const marcos: MarcosBotApp = {
   },
 };
 
-updateDatabaseSchema();
 marcos.start();

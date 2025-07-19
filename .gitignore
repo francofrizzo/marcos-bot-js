@@ -2,6 +2,7 @@
 dist
 
 # Local configuration files
+.env
 local
 scripts
 
