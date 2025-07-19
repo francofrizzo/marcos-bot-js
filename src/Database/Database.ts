@@ -65,6 +65,24 @@ const updateDatabaseSchema = async function (): Promise<void> {
   // TypeORM will handle schema updates automatically if synchronize is enabled
   // For production, you might want to use migrations instead
   await dataSource.synchronize();
+
+  // Create functional index for transitions using MD5 hashes to handle large text fields
+  // This addresses PostgreSQL's btree index size limit
+  const queryRunner = dataSource.createQueryRunner();
+  try {
+    await queryRunner.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "UQ_transitions_hash" 
+      ON "transitions" ("chainId", md5("fromState"), md5("toState"))
+    `);
+  } catch (error) {
+    // Index might already exist or database might not support this syntax (SQLite)
+    console.warn(
+      "Could not create functional index UQ_transitions_hash:",
+      error
+    );
+  } finally {
+    await queryRunner.release();
+  }
 };
 
 class DatabaseQuerier {

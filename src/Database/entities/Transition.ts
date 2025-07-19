@@ -1,7 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity("transitions")
-@Unique(["chainId", "fromState", "toState"])
 export class Transition {
   @PrimaryGeneratedColumn()
   id!: number;
